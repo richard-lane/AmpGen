@@ -60,5 +60,5 @@ The Generator can be configured to generate amplitudes in a number of different 
 
 ### CoherentSum
     A coherent sum of resonant contributions, where the probability density is found from summing the products of isobar
-    channel couplings and amplitudes. See [https://goofit.github.io/AmpGen/d1/d91/class_amp_gen_1_1_coherent_sum.html](/uri "here").
+    channel couplings and amplitudes. See [here](https://goofit.github.io/AmpGen/d1/d91/class_amp_gen_1_1_coherent_sum.html).
 
