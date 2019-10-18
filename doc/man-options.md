@@ -30,7 +30,8 @@ line:
 K(1)(1270)+_mass 0 1.270 0.01
 ```
 should be added to the user configuration. Other lineshapes may define other parameters, for example channel couplings
-or pole masses in the case of the K-matrices can be set or varied in a similar manner.
+or pole masses in the case of the K-matrices can be set or varied in a similar manner.  
+For more details about the API for describing particle decays, see [AmpGen::Particle](https://goofit.github.io/AmpGen/de/dd7/class_amp_gen_1_1_particle.html).
 
 #### Spin Formalism
 AmpGen implements both the covariant tensor (or Rarita-Schwinger) and canonical helicity formalism for describing the
