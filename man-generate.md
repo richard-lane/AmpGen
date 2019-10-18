@@ -60,7 +60,7 @@ The Generator can be configured to generate amplitudes in a number of different 
 
 ### CoherentSum
     A coherent sum of resonant contributions, where the probability density is given by:
-        P(x) = |&#931(g<sub>i</sub>A<sub>i</sub>(x))|<sup>2</sup>
+        P(x) = |&#931;(g<sub>i</sub>A<sub>i</sub>(x))|<sup>2</sup>
     Where *x* is a point in phase space, *g_i* is the coupling to an isobar channel and *A_i* is the amplitude of the
     channel.
 
