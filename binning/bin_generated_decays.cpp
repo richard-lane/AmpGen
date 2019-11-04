@@ -4,6 +4,7 @@
  *
  * This script is gross and needs a lot of clearing up; only exists to test my understanding
  */
+#include <cmath>
 #include <cstring>
 #include <iostream>
 #include <string>
@@ -15,7 +16,7 @@
 // @@@ some of them probably need to be changed
 
 // Length of DalitzEventList branch names, +1 for null terminator
-#define NAME_LENGTH 9
+#define NAME_LENGTH 10
 
 // DCS and CF relative amplitude and phase
 #define DCS_MAGNITUDE 0.0601387
@@ -29,6 +30,31 @@ inline bool fileExists(const std::string &name)
 {
     ifstream f(name.c_str());
     return f.good();
+}
+
+/*
+ * CoM energy squared of the ab system
+ * Takes an array of arrays of kinematic particle data
+ *
+ * Assumes particle data arrays take the form *(Px, Py, Pz, E)
+ *
+ * Allocates memory to the array of s values which must be freed by the caller
+ *
+ */
+double *s(double **particleA, double **particleB, const unsigned int length)
+{
+    // Initialise an array of CoM energies
+    double *const sValues = new double[length];
+
+    for (int i = 0; i < length; ++i) {
+        sValues[i] = std::pow(particleA[3][i], 2) - std::pow(particleA[0][i], 2) - std::pow(particleA[1][i], 2) -
+                     std::pow(particleA[2][i], 2) + std::pow(particleB[3][i], 2) - std::pow(particleB[0][i], 2) -
+                     std::pow(particleB[1][i], 2) - std::pow(particleB[2][i], 2) +
+                     2 * particleA[3][i] * particleB[3][i] - 2 * particleA[0][i] * particleB[0][i] -
+                     2 * particleA[1][i] * particleB[1][i] - 2 * particleA[2][i] * particleB[2][i];
+    }
+
+    return sValues;
 }
 
 /*
@@ -65,27 +91,27 @@ double **writeArrays(TTree *myTree, const char *particleName)
     double *       xMomenta{nullptr};
     double *       yMomenta{nullptr};
     double *       zMomenta{nullptr};
-    const char *   px = "_Px";
-    const char *   py = "_Py";
-    const char *   pz = "_Pz";
-    const char *   E  = "_E";
+    const char *   pxSuffix = "_Px";
+    const char *   pySuffix = "_Py";
+    const char *   pzSuffix = "_Pz";
+    const char *   energySuffix  = "_E";
 
     // Generate names of the particle's momenta and energy
     char particlePx[NAME_LENGTH];
     strcpy(particlePx, particleName);
-    strcat(particlePx, px);
+    strcat(particlePx, pxSuffix);
 
     char particlePy[NAME_LENGTH];
     strcpy(particlePy, particleName);
-    strcat(particlePy, py);
+    strcat(particlePy, pySuffix);
 
     char particlePz[NAME_LENGTH];
     strcpy(particlePz, particleName);
-    strcat(particlePz, pz);
+    strcat(particlePz, pzSuffix);
 
     char particleE[NAME_LENGTH];
     strcpy(particleE, particleName);
-    strcat(particleE, E);
+    strcat(particleE, energySuffix);
 
     // Create arrays of this particle's momentum and energy
     energies = writeArray(myTree, particleE);
@@ -140,15 +166,22 @@ void bin_generated_decays(TFile *inputFile)
     const char *treeName = "DalitzEventList"; // The name of the tree of interest in the ROOT file
     inputFile->GetObject(treeName, myTree);
 
-    double kE{0.0};
-    double kpx{0.0};
-    double kpy{0.0};
-    double kpz{0.0};
+    // Number of datapoints
+    const unsigned int length = myTree->GetEntries();
 
     // Create an array of arrays pointing to the K data
     double **   kArrays{nullptr};
     const char *kParticleName = "_1_K~";
     kArrays                   = writeArrays(myTree, kParticleName);
+
+    // Do the same for the pi- data
+    double **   pi1Arrays{nullptr};
+    const char *pi1ParticleName = "_2_pi#";
+    pi1Arrays                   = writeArrays(myTree, pi1ParticleName);
+
+    double **   pi2Arrays{nullptr};
+    const char *pi2ParticleName = "_3_pi#";
+    pi2Arrays                   = writeArrays(myTree, pi2ParticleName);
 
     for (int i = 0; i < myTree->GetEntries(); ++i) {
         TLorentzVector kLorentzVector{};
@@ -166,9 +199,19 @@ void bin_generated_decays(TFile *inputFile)
         //      @@@ Update global hadronic parameters
         //      @@@ Find which bin the event belongs in then update its hadronic parameters
     }
+
+    double *s01Values{nullptr};
+    double *s02Values{nullptr};
+    s01Values = s(kArrays, pi1Arrays, length);
+    s02Values = s(kArrays, pi2Arrays, length);
+
     auto tmpCanvas = new TCanvas("c", "c", 600, 600);
-    TH1* foo = new TH1D("foo", "bar", 100, 0.4, 1);
-    foo->FillN(1000, kArrays[3], 0);
+    // TH1 *foo       = new TH1D("foo", "bar", 100, 0.4, 1);
+    // foo->FillN(length, sValues, 0);
+    // foo->Draw();
+
+    TH2D *foo = new TH2D("foo", "bar", 100, 0, 1, 100, 0, 1);
+    foo->FillN(length, s01Values, s02Values, 0);
     foo->Draw();
 
     delete[] kArrays[0];
