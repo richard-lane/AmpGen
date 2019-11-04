@@ -50,11 +50,13 @@ void example_k3pi_binning_revised()
     std::vector<std::complex<double>> z_binned(NUM_BINS, std::complex<double>(0, 0));
     std::vector<double>               n_cf_binned(NUM_BINS, 0);
     std::vector<double>               n_dcs_binned(NUM_BINS, 0);
+
     for (int i = 0; i < NUM_EVENTS; ++i) {
         // Generate an event and convert it to the type needed for the binning by using eventFromVectors()
         auto event_4v = k3pi_binning::makeUnweighted(phsp);
         auto event    = k3pi_binning::eventFromVectors(event_4v);
 
+        //@@@ work out the CF and DCS amplitudes of the ith event
         // Work out the CF and DCS amplitudes of this event
         auto eval_cf  = bins.cf(event.data(), 1);
         auto eval_dcs = dcs_offset * bins.dcs(event.data(), 1);
