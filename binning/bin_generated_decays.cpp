@@ -206,19 +206,31 @@ void bin_generated_decays(TFile *inputFile)
     s02Values = s(kArrays, pi2Arrays, length);
 
     auto tmpCanvas = new TCanvas("c", "c", 600, 600);
-    // TH1 *foo       = new TH1D("foo", "bar", 100, 0.4, 1);
-    // foo->FillN(length, sValues, 0);
-    // foo->Draw();
 
-    TH2D *foo = new TH2D("foo", "bar", 100, 0, 1, 100, 0, 1);
+    // 1d histogram of CoM energy
+    // @@@ works for s01; all s02 are the same as pi2-(pz) for some reason
+    // @@@ sometimes it works as expected if you restart root WHAT THE heck
+    //TH1D *foo = new TH1D("foo", "bar", 100, -0.7, 0.7);
+    //foo->FillN(length, pi2Arrays[3], 0);
+    //foo->Draw();
+    
+    /*
+    for (int i=0; i<length; ++i){
+        if (i%100 == 0){
+            std::cout << pi2Arrays[0][i] <<std::endl;
+            std::cout << pi2Arrays[1][i] <<std::endl;
+            std::cout << pi2Arrays[2][i] <<std::endl;
+            std::cout << pi2Arrays[3][i] <<std::endl;
+            std::cout << "----" <<std::endl;
+        }
+    }
+    */
+
+
+    TH2D *foo = new TH2D("foo", "bar", 100, 0.35, 2.6, 100, 0.35, 2.6);
     foo->FillN(length, s01Values, s02Values, 0);
     foo->Draw();
 
-    delete[] kArrays[0];
-    delete[] kArrays[1];
-    delete[] kArrays[2];
-    delete[] kArrays[3];
-    delete[] kArrays;
 
     std::cout << "==== Global: =====================" << std::endl;
     std::cout << "==================================" << std::endl;
