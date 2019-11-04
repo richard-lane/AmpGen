@@ -91,10 +91,10 @@ double **writeArrays(TTree *myTree, const char *particleName)
     double *       xMomenta{nullptr};
     double *       yMomenta{nullptr};
     double *       zMomenta{nullptr};
-    const char *   pxSuffix = "_Px";
-    const char *   pySuffix = "_Py";
-    const char *   pzSuffix = "_Pz";
-    const char *   energySuffix  = "_E";
+    const char *   pxSuffix     = "_Px";
+    const char *   pySuffix     = "_Py";
+    const char *   pzSuffix     = "_Pz";
+    const char *   energySuffix = "_E";
 
     // Generate names of the particle's momenta and energy
     char particlePx[NAME_LENGTH];
@@ -210,28 +210,29 @@ void bin_generated_decays(TFile *inputFile)
     // 1d histogram of CoM energy
     // @@@ works for s01; all s02 are the same as pi2-(pz) for some reason
     // @@@ sometimes it works as expected if you restart root WHAT THE heck
-    //TH1D *foo = new TH1D("foo", "bar", 100, -0.7, 0.7);
-    //foo->FillN(length, pi2Arrays[3], 0);
-    //foo->Draw();
-    
-    /*
-    for (int i=0; i<length; ++i){
-        if (i%100 == 0){
-            std::cout << pi2Arrays[0][i] <<std::endl;
-            std::cout << pi2Arrays[1][i] <<std::endl;
-            std::cout << pi2Arrays[2][i] <<std::endl;
-            std::cout << pi2Arrays[3][i] <<std::endl;
-            std::cout << "----" <<std::endl;
-        }
-    }
-    */
-
-
-    TH2D *foo = new TH2D("foo", "bar", 100, 0.35, 2.6, 100, 0.35, 2.6);
-    foo->FillN(length, s01Values, s02Values, 0);
+    // @@@ possibly memory issue
+    TH1D *foo = new TH1D("foo", "bar", 100, 0.35, 2.6);
+    foo->FillN(length, s01Values, 0);
     foo->Draw();
 
+    //auto  tmpCanvas2 = new TCanvas("d", "d", 600, 600);
+    //TH2D *baz        = new TH2D("baz", "zoop", 100, 0.35, 2.6, 100, 0.35, 2.6);
+    //baz->FillN(length, s01Values, s02Values, 0);
+    //baz->Draw();
 
     std::cout << "==== Global: =====================" << std::endl;
     std::cout << "==================================" << std::endl;
+
+    delete s01Values;
+    delete s02Values;
+
+    for (int i = 0; i < 4; ++i) {
+        delete kArrays[i];
+        delete pi1Arrays[i];
+        delete pi2Arrays[i];
+    }
+    delete kArrays;
+    delete pi1Arrays;
+    delete pi2Arrays;
 }
+
