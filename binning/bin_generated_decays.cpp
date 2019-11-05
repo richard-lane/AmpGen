@@ -23,9 +23,6 @@
 #include "k3pi_binning.h"
 
 // ---- Magic Numbers
-// Length of DalitzEventList branch names, +1 for null terminator
-#define NAME_LENGTH 10
-
 // DCS and CF relative amplitude and phase
 #define DCS_MAGNITUDE 0.0601387
 #define DCS_PHASE 1.04827
@@ -49,7 +46,7 @@ inline bool fileExists(const std::string &name)
  * Allocates memory to the array of s values which must be freed by the caller
  *
  */
-double *s(const double **particleA, const double **particleB, const unsigned int length)
+double *s(double **particleA, double **particleB, const unsigned int length)
 {
     // Initialise an array of CoM energies
     double *const sValues = new double[length];
@@ -63,6 +60,43 @@ double *s(const double **particleA, const double **particleB, const unsigned int
     }
 
     return sValues;
+}
+
+/*
+ * Plot CoM energies s01 vs s02
+ *
+ */
+void plotS01VsS02(const char *title, double **kArrays, double **pi1Arrays, double **pi2Arrays, size_t length)
+{
+    const double *s01Values{nullptr};
+    const double *s02Values{nullptr};
+
+    s01Values = s(kArrays, pi1Arrays, length);
+    s02Values = s(kArrays, pi2Arrays, length);
+
+    auto    myCanvas = new TCanvas("CoM Energies", "CoM Energies", 600, 600);
+    TGraph *myGraph  = new TGraph(length, s01Values, s02Values);
+    myGraph->Draw("AP");
+
+    delete s01Values;
+    delete s02Values;
+}
+
+/*
+ * Plot an array
+ */
+void plotArray(const char *  title,
+               const double *array,
+               size_t        length,
+               size_t        nBins = 100,
+               double        xMin  = 0.0,
+               double        xMax  = 1.0)
+{
+    auto  myCanvas = new TCanvas(title, title, 600, 600);
+    TH1D *hist     = new TH1D(title, title, nBins, xMin, xMax);
+
+    hist->FillN(length, array, 0);
+    hist->Draw();
 }
 
 /*
@@ -130,11 +164,12 @@ void bin_generated_decays(TFile *inputFile)
     const unsigned int length = myTree->GetEntries();
 
     // Create an array of arrays pointing to the K data
+    // Lots of reused code here but the effort to refactor won't be worth the trouble
     double *const kPxArray   = new double[length];
     double *const kPyArray   = new double[length];
     double *const kPzArray   = new double[length];
     double *const kEArray    = new double[length];
-    const double *kArrays[4] = {kPxArray, kPyArray, kPzArray, kEArray};
+    double *kArrays[4] = {kPxArray, kPyArray, kPzArray, kEArray};
 
     writeArray(myTree, "_1_K~_E", kEArray);
     writeArray(myTree, "_1_K~_Px", kPxArray);
@@ -146,13 +181,13 @@ void bin_generated_decays(TFile *inputFile)
     double *const pi1PyArray   = new double[length];
     double *const pi1PzArray   = new double[length];
     double *const pi1EArray    = new double[length];
-    const double *pi1Arrays[4] = {pi1PxArray, pi1PyArray, pi1PzArray, pi1EArray};
+    double *pi1Arrays[4] = {pi1PxArray, pi1PyArray, pi1PzArray, pi1EArray};
 
     double *const pi2PxArray   = new double[length];
     double *const pi2PyArray   = new double[length];
     double *const pi2PzArray   = new double[length];
     double *const pi2EArray    = new double[length];
-    const double *pi2Arrays[4] = {pi2PxArray, pi2PyArray, pi2PzArray, pi2EArray};
+    double *pi2Arrays[4] = {pi2PxArray, pi2PyArray, pi2PzArray, pi2EArray};
 
     writeArray(myTree, "_2_pi#_E", pi1EArray);
     writeArray(myTree, "_2_pi#_Px", pi1PxArray);
@@ -169,25 +204,12 @@ void bin_generated_decays(TFile *inputFile)
     double *const pi3PyArray   = new double[length];
     double *const pi3PzArray   = new double[length];
     double *const pi3EArray    = new double[length];
-    const double *pi3Arrays[4] = {pi3PxArray, pi3PyArray, pi3PzArray, pi3EArray};
+    double *pi3Arrays[4] = {pi3PxArray, pi3PyArray, pi3PzArray, pi3EArray};
 
     writeArray(myTree, "_4_pi~_E", pi3EArray);
     writeArray(myTree, "_4_pi~_Px", pi3PxArray);
     writeArray(myTree, "_4_pi~_Py", pi3PyArray);
     writeArray(myTree, "_4_pi~_Pz", pi3PzArray);
-
-    //@@@ allocate memory to the 4 k arrays
-    //@@@ refactor writeArray to take in an allocated pointer and the branch name
-    //@@@ fill them with the data using the writeArray function
-
-    // Do the same for the pi- data
-    // double *   pi1Arrays[4];
-    // const char *pi1ParticleName = "_2_pi#";
-    // pi1Arrays                   = writeArrays(myTree, pi1ParticleName);
-
-    // double *   pi2Arrays[4];
-    // const char *pi2ParticleName = "_3_pi#";
-    // pi2Arrays                   = writeArrays(myTree, pi2ParticleName);
 
     for (int i = 0; i < myTree->GetEntries(); ++i) {
         TLorentzVector kLorentzVector{};
@@ -204,45 +226,23 @@ void bin_generated_decays(TFile *inputFile)
         //      @@@ Find which bin the event belongs in then update its hadronic parameters
     }
 
-    //@@@bugfix- some sort of memory error when writing to these arrays; sometimes s is calculated incorrectly
     double *s01Values{nullptr};
     double *s02Values{nullptr};
     s01Values = s(kArrays, pi1Arrays, length);
     s02Values = s(kArrays, pi2Arrays, length);
 
-    // auto tmpCanvas = new TCanvas("c", "c", 600, 600);
-
-    // TH1D *foo = new TH1D("foo", "bar", 100, 0, 1);
-    // foo->FillN(length, kArrays[2], 0);
-    // foo->Draw();
-
-    // Attempt to reproduce the s01 vs s02 plot to check consistency
-    auto    tmpCanvas2 = new TCanvas("d", "d", 600, 600);
-    TGraph *baz        = new TGraph(length, s01Values, s02Values);
-    baz->Draw("AP");
+    plotArray("K energies", kArrays[3], length);
+    plotS01VsS02("S01 vs S02", kArrays, pi1Arrays, pi2Arrays, length);
 
     // Placeholder for outputting hadronic parameters
     std::cout << "==== Global: =====================" << std::endl;
     std::cout << "==================================" << std::endl;
 
     // free arrays
-    delete[] kPxArray;
-    delete[] kPyArray;
-    delete[] kPzArray;
-    delete[] kEArray;
-
-    delete[] pi1PxArray;
-    delete[] pi1PyArray;
-    delete[] pi1PzArray;
-    delete[] pi1EArray;
-
-    delete[] pi2PxArray;
-    delete[] pi2PyArray;
-    delete[] pi2PzArray;
-    delete[] pi2EArray;
-
-    delete[] pi3PxArray;
-    delete[] pi3PyArray;
-    delete[] pi3PzArray;
-    delete[] pi3EArray;
+    for (int i = 0; i < 4; ++i) {
+        delete[] kArrays[i];
+        delete[] pi1Arrays[i];
+        delete[] pi2Arrays[i];
+        delete[] pi3Arrays[i];
+    }
 }
