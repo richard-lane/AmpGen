@@ -29,12 +29,12 @@
 #define NAME_LENGTH 10
 
 // DCS and CF relative amplitude and phase
-#define DCS_MAGNITUDE 0.0601387
-#define DCS_PHASE 1.04827
+#define DCS_MAGNITUDE 0.0445
+#define DCS_PHASE -3.04
 
 /// Bin limits in phase, centred on zero by construction
 #define NUM_BINS 5
-#define BIN_LIMITS -39, 0, 43, 180
+#define BIN_LIMITS -39, 0, 43, 180 // not sure what to set these to
 
 /*
  * CoM energy squared of the ab system
@@ -214,7 +214,7 @@ void bin_generated_decays(TFile *inputFile)
     }
 
     // Make some plots to check that the data from ROOT has been read in correctly
-    plot_things(kArrays, pi1Arrays, pi2Arrays, length);
+    //plot_things(kArrays, pi1Arrays, pi2Arrays, length);
 
     // Output hadronic parameters
     std::cout << "==== Global: =====================" << std::endl;
