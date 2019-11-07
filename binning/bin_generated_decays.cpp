@@ -12,6 +12,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <vector>
 
 #include "TCanvas.h"
 #include "TFile.h"
@@ -147,14 +148,6 @@ void bin_generated_decays(TFile *inputFile)
     // Create bins based on DCS and CF amplitudes
     k3pi_binning::binning bins(dcsFile, cfFile, dcs_offset, {BIN_LIMITS});
 
-    /// initialise global hadronic parameters, and parameters in each of the bins.
-    std::complex<double>              z(0, 0);
-    double                            n_cf(0);
-    double                            n_dcs(0);
-    std::vector<std::complex<double>> z_binned(NUM_BINS, std::complex<double>(0, 0));
-    std::vector<double>               n_cf_binned(NUM_BINS, 0);
-    std::vector<double>               n_dcs_binned(NUM_BINS, 0);
-
     // Read in the tree and branches from the provided ROOT file
     // The tree of interest is DalitzEventList as this contains the decay products' kinematic data
     TTree *myTree = nullptr;
@@ -211,32 +204,67 @@ void bin_generated_decays(TFile *inputFile)
     writeArray(myTree, "_4_pi~_Py", pi3PyArray);
     writeArray(myTree, "_4_pi~_Pz", pi3PzArray);
 
+
+    /// initialise global hadronic parameters, and parameters in each of the bins.
+    std::complex<double>              z(0, 0);
+    double                            n_cf(0);
+    double                            n_dcs(0);
+    std::vector<std::complex<double>> z_binned(NUM_BINS, std::complex<double>(0, 0));
+    std::vector<double>               n_cf_binned(NUM_BINS, 0);
+    std::vector<double>               n_dcs_binned(NUM_BINS, 0);
+
     for (int i = 0; i < myTree->GetEntries(); ++i) {
-        TLorentzVector kLorentzVector{};
-        TLorentzVector pi1LorentzVector{};
-        TLorentzVector pi2LorentzVector{};
-        TLorentzVector pi3LorentzVector{}; //@@@ initialise these with values from the above allocated arrays
+        TLorentzVector kLorentzVector{kArrays[0][i], kArrays[1][i], kArrays[2][i], kArrays[3][i]};
+        TLorentzVector pi1LorentzVector{pi1Arrays[0][i], pi1Arrays[1][i], pi1Arrays[2][i], pi1Arrays[3][i]};
+        TLorentzVector pi2LorentzVector{pi2Arrays[0][i], pi2Arrays[1][i], pi2Arrays[2][i], pi2Arrays[3][i]};
+        TLorentzVector pi3LorentzVector{pi3Arrays[0][i], pi3Arrays[1][i], pi3Arrays[2][i], pi3Arrays[3][i]};
 
         // @@@ todo:
         //      Create a vector of TLorentzVectors for this event (K+, pi-, pi-, pi+)
-        //      run eventFromVectors on it to get an event vector (or could just create the event vector straight away)
+        std::vector<TLorentzVector> eventVector{kLorentzVector, pi1LorentzVector, pi2LorentzVector, pi3LorentzVector};
+        auto event = k3pi_binning::eventFromVectors(eventVector);
 
         //      @@@ Work out the CF and DCS amplitudes of this event, using the bins object created above
-        //      @@@ Update global hadronic parameters
-        //      @@@ Find which bin the event belongs in then update its hadronic parameters
+        auto eval_cf  = bins.cf(event.data(), 1);
+        auto eval_dcs = dcs_offset * bins.dcs(event.data(), 1);
+
+        // Update the global hadronic parameters
+        z += eval_cf * std::conj(eval_dcs);
+        n_cf += std::norm(eval_cf);
+        n_dcs += std::norm(eval_dcs);
+
+        // Find which bin the event belongs in and update its hadronic parameters
+        auto bin = bins.bin(eventVector, 1);
+        z_binned[bin] += eval_cf * std::conj(eval_dcs);
+        n_cf_binned[bin] += std::norm(eval_cf);
+        n_dcs_binned[bin] += std::norm(eval_dcs);
+
     }
 
-    double *s01Values{nullptr};
-    double *s02Values{nullptr};
-    s01Values = s(kArrays, pi1Arrays, length);
-    s02Values = s(kArrays, pi2Arrays, length);
+    //double *s01Values{nullptr};
+    //double *s02Values{nullptr};
+    //s01Values = s(kArrays, pi1Arrays, length);
+    //s02Values = s(kArrays, pi2Arrays, length);
 
-    plotArray("K energies", kArrays[3], length);
-    plotS01VsS02("S01 vs S02", kArrays, pi1Arrays, pi2Arrays, length);
+    //plotArray("K energies", kArrays[3], length);
+    //plotS01VsS02("S01 vs S02", kArrays, pi1Arrays, pi2Arrays, length);
 
-    // Placeholder for outputting hadronic parameters
+    // Output hadronic parameters
     std::cout << "==== Global: =====================" << std::endl;
+    std::cout << "R = " << std::abs(z) / sqrt(n_cf * n_dcs) << std::endl; /// should be ~ 0.47
+    std::cout << "d = " << std::arg(z) * 180 / M_PI << std::endl; /// should be ~ zero by construction (< 1 degree)
+    std::cout << "r = " << sqrt(n_dcs / n_cf) << std::endl;       /// should be ~ 0.055
+
+    for (int i = 0; i < NUM_BINS; ++i) {
+        std::cout << "==== Bin " << i + 1 << ": ======================" << std::endl;
+        std::cout << "R[" << i + 1 << "] = " << std::abs(z_binned[i]) / sqrt(n_cf_binned[i] * n_dcs_binned[i])
+                  << std::endl;
+        std::cout << "d[" << i + 1 << "] = " << std::arg(z_binned[i]) * 180 / M_PI << std::endl;
+        std::cout << "K[" << i + 1 << "] = " << n_dcs_binned[i] / n_dcs << std::endl;
+        std::cout << "K'[" << i + 1 << "] = " << n_cf_binned[i] / n_cf << std::endl;
+    }
     std::cout << "==================================" << std::endl;
+
 
     // free arrays
     for (int i = 0; i < 4; ++i) {
