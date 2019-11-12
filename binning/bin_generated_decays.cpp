@@ -137,7 +137,7 @@ std::vector<TLorentzVector> writeVector(TTree &myTree, const std::string &partic
 }
 
 /*
- * Bin the decays modelled an AmpGen generated inputFile into phase bins as defined by $BIN_LIMITS
+ * Bin the decays modelled in an AmpGen generated inputFile into phase bins as defined by $BIN_LIMITS
  *
  */
 void bin_generated_decays(TFile *inputFile)
