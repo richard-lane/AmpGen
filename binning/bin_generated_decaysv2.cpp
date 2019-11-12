@@ -170,6 +170,23 @@ void bin_generated_decays(TFile *inputFile)
     double **pi2Arrays = writeArrays(myTree, "_3_pi#", length);
     double **pi3Arrays = writeArrays(myTree, "_4_pi~", length);
 
+    // Create vectors of particle data
+    std::vector<double> kPxVector = std::vector<double>(length);
+    double              myData{0.0};
+
+    // Point the desired branch at the myData variable.
+    myTree->SetBranchAddress("_1_K~_Px", &myData);
+
+    // Create an array of the appropriate size to store this data
+    for (Long64_t i = 0; i < myTree->GetEntries(); ++i) {
+        myTree->GetEntry(i);
+        kPxVector[i] = myData;
+    }
+    for (size_t i = 0; i < length; ++i) {
+        std::cout << kPxVector[i] << std::endl;
+    }
+    myTree->ResetBranchAddresses();
+
     // Apply scaling and rotation to the DCS amplitude such that we get dcs/cf amplitude ratio 'r' = 0.055
     // and the average relative strong-phase between the two amplitudes ~ 0.
     std::complex<double> dcs_offset = DCS_MAGNITUDE * exp(std::complex<double>(0, 1) * DCS_PHASE * M_PI / 180.);
