@@ -214,12 +214,13 @@ void bin_generated_decays(TFile *inputFile)
     }
 
     // Make some plots to check that the data from ROOT has been read in correctly
-    //plot_things(kArrays, pi1Arrays, pi2Arrays, length);
+    // plot_things(kArrays, pi1Arrays, pi2Arrays, length);
 
     // Output hadronic parameters
     std::cout << "==== Global: =====================" << std::endl;
     std::cout << "R = " << std::abs(z) / sqrt(n_cf * n_dcs) << "\t// Should be ~0.47" << std::endl;
-    std::cout << "d = " << std::arg(z) * 180 / M_PI << "\t// Should be ~ zero by construction (< 1 degree)" << std::endl;
+    std::cout << "d = " << std::arg(z) * 180 / M_PI << "\t// Should be ~ zero by construction (< 1 degree)"
+              << std::endl;
     std::cout << "r = " << sqrt(n_dcs / n_cf) << "\t// Should be ~ 0.055" << std::endl;
 
     for (int i = 0; i < NUM_BINS; ++i) {
