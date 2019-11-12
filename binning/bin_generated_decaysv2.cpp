@@ -178,11 +178,6 @@ std::vector<TLorentzVector> writeVector(TTree &myTree, const std::string &partic
 {
     std::vector<TLorentzVector> myVector = std::vector<TLorentzVector>(myTree.GetEntries());
 
-    std::string pxBranchName = particleName + "_Px";
-    std::string pyBranchName = particleName + "_Py";
-    std::string pzBranchName = particleName + "_Pz";
-    std::string eBranchName  = particleName + "_E";
-
     writeData(myTree, particleName + "_Px", myVector, 0);
     writeData(myTree, particleName + "_Py", myVector, 1);
     writeData(myTree, particleName + "_Pz", myVector, 2);
@@ -224,23 +219,11 @@ void bin_generated_decays(TFile *inputFile)
     // Number of datapoints
     const unsigned int length = myTree->GetEntries();
 
-    // Create an arrays of arrays pointing to the particle data
-    double **kArrays   = writeArrays(myTree, "_1_K~", length);
-    double **pi1Arrays = writeArrays(myTree, "_2_pi#", length);
-    double **pi2Arrays = writeArrays(myTree, "_3_pi#", length);
-    double **pi3Arrays = writeArrays(myTree, "_4_pi~", length);
-
     // Create vectors of particle data
-    std::vector<TLorentzVector> kVectors = writeVector(*myTree, "_1_K~");
-
-    double *kpx = vector2Array(kVectors, 0);
-
-    auto  kCanvas = new TCanvas("K Px", "K Px", 600, 600);
-    TH1D *hist    = new TH1D("K Px", "K Px", 100, -1, 1);
-    hist->FillN(length, kpx, 0);
-    hist->Draw();
-
-    delete[] kpx;
+    std::vector<TLorentzVector> kVectors   = writeVector(*myTree, "_1_K~");
+    std::vector<TLorentzVector> pi1Vectors = writeVector(*myTree, "_2_pi#");
+    std::vector<TLorentzVector> pi2Vectors = writeVector(*myTree, "_3_pi#");
+    std::vector<TLorentzVector> pi3Vectors = writeVector(*myTree, "_4_pi~");
 
     // Apply scaling and rotation to the DCS amplitude such that we get dcs/cf amplitude ratio 'r' = 0.055
     // and the average relative strong-phase between the two amplitudes ~ 0.
@@ -261,12 +244,7 @@ void bin_generated_decays(TFile *inputFile)
 
     for (int i = 0; i < myTree->GetEntries(); ++i) {
         // Create a vector of TLorentzVectors for this event (K+, pi-, pi-, pi+)
-        TLorentzVector kLorentzVector{kArrays[0][i], kArrays[1][i], kArrays[2][i], kArrays[3][i]};
-        TLorentzVector pi1LorentzVector{pi1Arrays[0][i], pi1Arrays[1][i], pi1Arrays[2][i], pi1Arrays[3][i]};
-        TLorentzVector pi2LorentzVector{pi2Arrays[0][i], pi2Arrays[1][i], pi2Arrays[2][i], pi2Arrays[3][i]};
-        TLorentzVector pi3LorentzVector{pi3Arrays[0][i], pi3Arrays[1][i], pi3Arrays[2][i], pi3Arrays[3][i]};
-
-        std::vector<TLorentzVector> eventVector{kLorentzVector, pi1LorentzVector, pi2LorentzVector, pi3LorentzVector};
+        std::vector<TLorentzVector> eventVector{kVectors[i], pi1Vectors[i], pi2Vectors[i], pi3Vectors[i]};
         auto                        event = k3pi_binning::eventFromVectors(eventVector);
 
         // Work out the CF and DCS amplitudes of this event, using the bins object created above
@@ -304,16 +282,4 @@ void bin_generated_decays(TFile *inputFile)
         std::cout << "K'[" << i + 1 << "] = " << n_cf_binned[i] / n_cf << std::endl;
     }
     std::cout << "==================================" << std::endl;
-
-    // free arrays
-    for (int i = 0; i < 4; ++i) {
-        delete[] kArrays[i];
-        delete[] pi1Arrays[i];
-        delete[] pi2Arrays[i];
-        delete[] pi3Arrays[i];
-    }
-    delete[] kArrays;
-    delete[] pi1Arrays;
-    delete[] pi2Arrays;
-    delete[] pi3Arrays;
 }
