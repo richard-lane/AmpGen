@@ -25,9 +25,6 @@
 #include "k3pi_binning.h"
 
 // ---- Magic Numbers
-// Max length of a branch name in the ROOT file of interest
-#define NAME_LENGTH 10
-
 // DCS and CF relative amplitude and phase
 #define DCS_MAGNITUDE 0.0445
 #define DCS_PHASE -3.04
