@@ -62,9 +62,8 @@ double *vector2Array(const std::vector<TLorentzVector> &particleVector, const si
  * Assumes each entry of the vector is of the form (Px, Py, Pz, E)
  *
  */
-const std::vector<double> s(std::vector<TLorentzVector> &particleA, std::vector<TLorentzVector> &particleB)
+const std::vector<double> s(const std::vector<TLorentzVector> &particleA, const std::vector<TLorentzVector> &particleB)
 {
-    // Initialise an array of CoM energies
     size_t              length = particleA.size();
     std::vector<double> sValues(particleA.size());
 
@@ -84,9 +83,9 @@ const std::vector<double> s(std::vector<TLorentzVector> &particleA, std::vector<
  * Plot the K energies and make a plot of s01 vs s02 to check consistency with the ROOT TBrowser
  *
  */
-void plot_things(std::vector<TLorentzVector> kVectors,
-                 std::vector<TLorentzVector> pi1Vectors,
-                 std::vector<TLorentzVector> pi2Vectors)
+void plot_things(const std::vector<TLorentzVector> &kVectors,
+                 const std::vector<TLorentzVector> &pi1Vectors,
+                 const std::vector<TLorentzVector> &pi2Vectors)
 {
     size_t length = kVectors.size();
 
@@ -158,7 +157,7 @@ void bin_generated_decays(TFile *inputFile)
 
     // Scaling and rotation to the DCS amplitude such that we get dcs/cf amplitude ratio 'r' = 0.055
     // and the average relative strong-phase between the two amplitudes ~ 0.
-    std::complex<double> dcs_offset = DCS_MAGNITUDE * exp(std::complex<double>(0, 1) * DCS_PHASE * M_PI / 180.);
+    const std::complex<double> dcs_offset = DCS_MAGNITUDE * exp(std::complex<double>(0, 1) * DCS_PHASE * M_PI / 180.);
 
     // Define the bins based on the form of the DCS and CF decays
     const std::string     dcsFile{"binning/dcs.so"};
@@ -172,10 +171,10 @@ void bin_generated_decays(TFile *inputFile)
     inputFile->GetObject("DalitzEventList", myTree);
 
     // Create vectors of particle data
-    std::vector<TLorentzVector> kVectors   = writeVector(*myTree, "_1_K~");
-    std::vector<TLorentzVector> pi1Vectors = writeVector(*myTree, "_2_pi#");
-    std::vector<TLorentzVector> pi2Vectors = writeVector(*myTree, "_3_pi#");
-    std::vector<TLorentzVector> pi3Vectors = writeVector(*myTree, "_4_pi~");
+    const std::vector<TLorentzVector> kVectors   = writeVector(*myTree, "_1_K~");
+    const std::vector<TLorentzVector> pi1Vectors = writeVector(*myTree, "_2_pi#");
+    const std::vector<TLorentzVector> pi2Vectors = writeVector(*myTree, "_3_pi#");
+    const std::vector<TLorentzVector> pi3Vectors = writeVector(*myTree, "_4_pi~");
 
     for (int i = 0; i < myTree->GetEntries(); ++i) {
         // Create a vector of TLorentzVectors for this event (K+, pi-, pi-, pi+)
