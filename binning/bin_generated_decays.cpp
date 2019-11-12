@@ -37,25 +37,43 @@
 #define BIN_LIMITS -39, 0, 43, 180 // not sure what to set these to
 
 /*
- * CoM energy squared of the ab system
- * Takes two arrays of arrays of kinematic particle data
+ * From a vector of TLorentzVectors and the desired index (0,1,2,3), find a C-style array of data
  *
- * Assumes particle data arrays take the form *(Px, Py, Pz, E)
+ * Allocates memory to the array which must be freed by the caller.
  *
- * Allocates memory to the array of s values which must be freed by the caller
- *
+ * e.g. vector2Array(myVector, 0) for x-momentum
  */
-double *s(double **particleA, double **particleB, const unsigned int length)
+double *vector2Array(const std::vector<TLorentzVector> &particleVector, const size_t index)
 {
-    // Initialise an array of CoM energies
-    double *const sValues = new double[length];
+    size_t  length   = particleVector.size();
+    double *outArray = new double[length];
 
     for (size_t i = 0; i < length; ++i) {
-        sValues[i] = std::pow(particleA[3][i], 2) - std::pow(particleA[0][i], 2) - std::pow(particleA[1][i], 2) -
-                     std::pow(particleA[2][i], 2) + std::pow(particleB[3][i], 2) - std::pow(particleB[0][i], 2) -
-                     std::pow(particleB[1][i], 2) - std::pow(particleB[2][i], 2) +
-                     2 * particleA[3][i] * particleB[3][i] - 2 * particleA[0][i] * particleB[0][i] -
-                     2 * particleA[1][i] * particleB[1][i] - 2 * particleA[2][i] * particleB[2][i];
+        outArray[i] = particleVector[i][index];
+    }
+
+    return outArray;
+}
+
+/*
+ * CoM energy squared of the ab system
+ * Takes two vectors of TLorentzVectors as particle data
+ *
+ * Assumes each entry of the vector is of the form (Px, Py, Pz, E)
+ *
+ */
+const std::vector<double> s(const std::vector<TLorentzVector> &particleA, const std::vector<TLorentzVector> &particleB)
+{
+    size_t              length = particleA.size();
+    std::vector<double> sValues(particleA.size());
+
+    for (size_t i = 0; i < length; ++i) {
+
+        sValues[i] = std::pow(particleA[i][3], 2) - std::pow(particleA[i][0], 2) - std::pow(particleA[i][1], 2) -
+                     std::pow(particleA[i][2], 2) + std::pow(particleB[i][3], 2) - std::pow(particleB[i][0], 2) -
+                     std::pow(particleB[i][1], 2) - std::pow(particleB[i][2], 2) +
+                     2 * particleA[i][3] * particleB[i][3] - 2 * particleA[i][0] * particleB[i][0] -
+                     2 * particleA[i][1] * particleB[i][1] - 2 * particleA[i][2] * particleB[i][2];
     }
 
     return sValues;
@@ -65,89 +83,60 @@ double *s(double **particleA, double **particleB, const unsigned int length)
  * Plot the K energies and make a plot of s01 vs s02 to check consistency with the ROOT TBrowser
  *
  */
-void plot_things(double **kArrays, double **pi1Arrays, double **pi2Arrays, size_t length)
+void plot_things(const std::vector<TLorentzVector> &kVectors,
+                 const std::vector<TLorentzVector> &pi1Vectors,
+                 const std::vector<TLorentzVector> &pi2Vectors)
 {
+    size_t length = kVectors.size();
 
     // Plot K energies
     auto  kCanvas = new TCanvas("K energies", "K energies", 600, 600);
     TH1D *hist    = new TH1D("K energies", "K energies", 100, 0.45, 1);
-    hist->FillN(length, kArrays[3], 0);
+    hist->FillN(length, vector2Array(kVectors, 3), 0);
     hist->Draw();
 
     // Plot CoM energies on a new canvas
-    auto    comCanvas = new TCanvas("CoM Energies", "CoM Energies", 600, 600);
-    double *s01       = s(kArrays, pi1Arrays, length);
-    double *s02       = s(kArrays, pi2Arrays, length);
-    TGraph *myGraph   = new TGraph(length, s(kArrays, pi1Arrays, length), s(kArrays, pi2Arrays, length));
+    auto                      comCanvas = new TCanvas("CoM Energies", "CoM Energies", 600, 600);
+    const std::vector<double> s01       = s(kVectors, pi1Vectors);
+    const std::vector<double> s02       = s(kVectors, pi2Vectors);
+    TGraph *                  myGraph   = new TGraph(length, s01.data(), s02.data());
     myGraph->Draw("AP");
-
-    delete[] s01;
-    delete[] s02;
 }
 
 /*
- * Store the data from myBranch on myTree into myArray
+ * Write the data on branchName to the index'th position of each TLorentzVector in myVector.
+ * e.g. to write x-momenta of a particle described by ROOT branch foo_Px, call writeData("foo_Px", myVector, 0)
+ *
+ * The TLorentzVector should be of the form (Px, Py, Pz, E).
  */
-void writeArray(TTree *myTree, const char *myBranchName, double *myArray)
+inline void
+writeData(TTree &myTree, const std::string &branchName, std::vector<TLorentzVector> &myVector, const size_t &index)
 {
-    const long long numEntries{myTree->GetEntries()};
-    double          myData{0.0};
+    double myData{0.0};
 
-    // Point the desired branch at the myData variable.
-    myTree->SetBranchAddress(myBranchName, &myData);
-
-    // Create an array of the appropriate size to store this data
-    for (Long64_t i = 0; i < myTree->GetEntries(); ++i) {
-        myTree->GetEntry(i);
-        myArray[i] = myData;
+    myTree.SetBranchAddress(branchName.c_str(), &myData);
+    for (Long64_t i = 0; i < myTree.GetEntries(); ++i) {
+        myTree.GetEntry(i);
+        myVector[i][index] = myData;
     }
-
     // Reset all branch addresses to avoid a bug where repeatedly calling this function would set an array to the wrong
     // values
-    myTree->ResetBranchAddresses();
+    myTree.ResetBranchAddresses();
 }
 
 /*
- * Write an array of arrays for storing particle data
- *
- * Allocates memory for the data arrays which must be freed by the caller.
- * Also allocates memory to the array of arrays which must be freed
+ * Write a vector of TLorentzVectors containing the data for the particle branchName
  */
-double **writeArrays(TTree *myTree, const char *name, size_t length)
+std::vector<TLorentzVector> writeVector(TTree &myTree, const std::string &particleName)
 {
+    std::vector<TLorentzVector> myVector = std::vector<TLorentzVector>(myTree.GetEntries());
 
-    // Generate names for the arrays
-    // This is a stupid way to initialise an array but i can't think of a better one
-    char xArrayName[NAME_LENGTH]{
-        name[0], name[1], name[2], name[3], name[4], name[5], name[6], name[7], name[8], name[9]};
-    char yArrayName[NAME_LENGTH]{
-        name[0], name[1], name[2], name[3], name[4], name[5], name[6], name[7], name[8], name[9]};
-    char zArrayName[NAME_LENGTH]{
-        name[0], name[1], name[2], name[3], name[4], name[5], name[6], name[7], name[8], name[9]};
-    char eArrayName[NAME_LENGTH]{
-        name[0], name[1], name[2], name[3], name[4], name[5], name[6], name[7], name[8], name[9]};
+    writeData(myTree, particleName + "_Px", myVector, 0);
+    writeData(myTree, particleName + "_Py", myVector, 1);
+    writeData(myTree, particleName + "_Pz", myVector, 2);
+    writeData(myTree, particleName + "_E", myVector, 3);
 
-    strcat(xArrayName, "_Px");
-    strcat(yArrayName, "_Py");
-    strcat(zArrayName, "_Pz");
-    strcat(eArrayName, "_E");
-
-    // Allocate memory for data arrays
-    double *const xArray = new double[length];
-    double *const yArray = new double[length];
-    double *const zArray = new double[length];
-    double *const eArray = new double[length];
-
-    // Create an array of arrays
-    double **arrays = new double *[4] { xArray, yArray, zArray, eArray };
-
-    // Write the data to the arrays
-    writeArray(myTree, xArrayName, xArray);
-    writeArray(myTree, yArrayName, yArray);
-    writeArray(myTree, zArrayName, zArray);
-    writeArray(myTree, eArrayName, eArray);
-
-    return arrays;
+    return myVector;
 }
 
 /*
@@ -156,29 +145,8 @@ double **writeArrays(TTree *myTree, const char *name, size_t length)
  */
 void bin_generated_decays(TFile *inputFile)
 {
-    // Read in the tree and branches from the provided ROOT file
-    // The tree of interest is DalitzEventList as this contains the decay products' kinematic data
-    TTree *myTree = nullptr;
-    inputFile->GetObject("DalitzEventList", myTree);
-
-    // Number of datapoints
-    const unsigned int length = myTree->GetEntries();
-
-    // Create an arrays of arrays pointing to the particle data
-    double **kArrays   = writeArrays(myTree, "_1_K~", length);
-    double **pi1Arrays = writeArrays(myTree, "_2_pi#", length);
-    double **pi2Arrays = writeArrays(myTree, "_3_pi#", length);
-    double **pi3Arrays = writeArrays(myTree, "_4_pi~", length);
-
-    // Apply scaling and rotation to the DCS amplitude such that we get dcs/cf amplitude ratio 'r' = 0.055
-    // and the average relative strong-phase between the two amplitudes ~ 0.
-    std::complex<double> dcs_offset = DCS_MAGNITUDE * exp(std::complex<double>(0, 1) * DCS_PHASE * M_PI / 180.);
-
-    // Define the bins based on the form of the DCS and CF decays
-    const std::string     dcsFile{"binning/dcs.so"};
-    const std::string     cfFile{"binning/cf.so"};
-    k3pi_binning::binning bins(dcsFile, cfFile, dcs_offset, {BIN_LIMITS});
-
+    // ---- Parameters
+    // This section just sets up parameters to be used later
     /// initialise global hadronic parameters, and parameters in each of the bins.
     std::complex<double>              z(0, 0);
     double                            n_cf(0);
@@ -187,14 +155,30 @@ void bin_generated_decays(TFile *inputFile)
     std::vector<double>               n_cf_binned(NUM_BINS, 0);
     std::vector<double>               n_dcs_binned(NUM_BINS, 0);
 
+    // Scaling and rotation to the DCS amplitude such that we get dcs/cf amplitude ratio 'r' = 0.055
+    // and the average relative strong-phase between the two amplitudes ~ 0.
+    const std::complex<double> dcs_offset = DCS_MAGNITUDE * exp(std::complex<double>(0, 1) * DCS_PHASE * M_PI / 180.);
+
+    // Define the bins based on the form of the DCS and CF decays
+    const std::string     dcsFile{"binning/dcs.so"};
+    const std::string     cfFile{"binning/cf.so"};
+    k3pi_binning::binning bins(dcsFile, cfFile, dcs_offset, {BIN_LIMITS});
+
+    // ---- Calculations
+    // Read in the tree and branches from the provided ROOT file
+    // The tree of interest is DalitzEventList as this contains the decay products' kinematic data
+    TTree *myTree = nullptr;
+    inputFile->GetObject("DalitzEventList", myTree);
+
+    // Create vectors of particle data
+    const std::vector<TLorentzVector> kVectors   = writeVector(*myTree, "_1_K~");
+    const std::vector<TLorentzVector> pi1Vectors = writeVector(*myTree, "_2_pi#");
+    const std::vector<TLorentzVector> pi2Vectors = writeVector(*myTree, "_3_pi#");
+    const std::vector<TLorentzVector> pi3Vectors = writeVector(*myTree, "_4_pi~");
+
     for (int i = 0; i < myTree->GetEntries(); ++i) {
         // Create a vector of TLorentzVectors for this event (K+, pi-, pi-, pi+)
-        TLorentzVector kLorentzVector{kArrays[0][i], kArrays[1][i], kArrays[2][i], kArrays[3][i]};
-        TLorentzVector pi1LorentzVector{pi1Arrays[0][i], pi1Arrays[1][i], pi1Arrays[2][i], pi1Arrays[3][i]};
-        TLorentzVector pi2LorentzVector{pi2Arrays[0][i], pi2Arrays[1][i], pi2Arrays[2][i], pi2Arrays[3][i]};
-        TLorentzVector pi3LorentzVector{pi3Arrays[0][i], pi3Arrays[1][i], pi3Arrays[2][i], pi3Arrays[3][i]};
-
-        std::vector<TLorentzVector> eventVector{kLorentzVector, pi1LorentzVector, pi2LorentzVector, pi3LorentzVector};
+        std::vector<TLorentzVector> eventVector{kVectors[i], pi1Vectors[i], pi2Vectors[i], pi3Vectors[i]};
         auto                        event = k3pi_binning::eventFromVectors(eventVector);
 
         // Work out the CF and DCS amplitudes of this event, using the bins object created above
@@ -214,7 +198,7 @@ void bin_generated_decays(TFile *inputFile)
     }
 
     // Make some plots to check that the data from ROOT has been read in correctly
-    // plot_things(kArrays, pi1Arrays, pi2Arrays, length);
+    plot_things(kVectors, pi1Vectors, pi2Vectors);
 
     // Output hadronic parameters
     std::cout << "==== Global: =====================" << std::endl;
@@ -232,16 +216,4 @@ void bin_generated_decays(TFile *inputFile)
         std::cout << "K'[" << i + 1 << "] = " << n_cf_binned[i] / n_cf << std::endl;
     }
     std::cout << "==================================" << std::endl;
-
-    // free arrays
-    for (int i = 0; i < 4; ++i) {
-        delete[] kArrays[i];
-        delete[] pi1Arrays[i];
-        delete[] pi2Arrays[i];
-        delete[] pi3Arrays[i];
-    }
-    delete[] kArrays;
-    delete[] pi1Arrays;
-    delete[] pi2Arrays;
-    delete[] pi3Arrays;
 }
