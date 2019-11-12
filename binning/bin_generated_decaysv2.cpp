@@ -37,25 +37,44 @@
 #define BIN_LIMITS -39, 0, 43, 180 // not sure what to set these to
 
 /*
- * CoM energy squared of the ab system
- * Takes two arrays of arrays of kinematic particle data
+ * From a vector of TLorentzVectors and the desired index (0,1,2,3), find a C-style array of data
  *
- * Assumes particle data arrays take the form *(Px, Py, Pz, E)
+ * Allocates memory to the array which must be freed by the caller.
  *
- * Allocates memory to the array of s values which must be freed by the caller
- *
+ * e.g. vector2Array(myVector, 0) for x-momentum
  */
-double *s(double **particleA, double **particleB, const unsigned int length)
+double *vector2Array(const std::vector<TLorentzVector> &particleVector, const size_t index)
 {
-    // Initialise an array of CoM energies
-    double *const sValues = new double[length];
+    size_t  length   = particleVector.size();
+    double *outArray = new double[length];
 
     for (size_t i = 0; i < length; ++i) {
-        sValues[i] = std::pow(particleA[3][i], 2) - std::pow(particleA[0][i], 2) - std::pow(particleA[1][i], 2) -
-                     std::pow(particleA[2][i], 2) + std::pow(particleB[3][i], 2) - std::pow(particleB[0][i], 2) -
-                     std::pow(particleB[1][i], 2) - std::pow(particleB[2][i], 2) +
-                     2 * particleA[3][i] * particleB[3][i] - 2 * particleA[0][i] * particleB[0][i] -
-                     2 * particleA[1][i] * particleB[1][i] - 2 * particleA[2][i] * particleB[2][i];
+        outArray[i] = particleVector[i][index];
+    }
+
+    return outArray;
+}
+
+/*
+ * CoM energy squared of the ab system
+ * Takes two vectors of TLorentzVectors as particle data
+ *
+ * Assumes each entry of the vector is of the form (Px, Py, Pz, E)
+ *
+ */
+const std::vector<double> s(std::vector<TLorentzVector> &particleA, std::vector<TLorentzVector> &particleB)
+{
+    // Initialise an array of CoM energies
+    size_t              length = particleA.size();
+    std::vector<double> sValues(particleA.size());
+
+    for (size_t i = 0; i < length; ++i) {
+
+        sValues[i] = std::pow(particleA[i][3], 2) - std::pow(particleA[i][0], 2) - std::pow(particleA[i][1], 2) -
+                     std::pow(particleA[i][2], 2) + std::pow(particleB[i][3], 2) - std::pow(particleB[i][0], 2) -
+                     std::pow(particleB[i][1], 2) - std::pow(particleB[i][2], 2) +
+                     2 * particleA[i][3] * particleB[i][3] - 2 * particleA[i][0] * particleB[i][0] -
+                     2 * particleA[i][1] * particleB[i][1] - 2 * particleA[i][2] * particleB[i][2];
     }
 
     return sValues;
@@ -65,24 +84,24 @@ double *s(double **particleA, double **particleB, const unsigned int length)
  * Plot the K energies and make a plot of s01 vs s02 to check consistency with the ROOT TBrowser
  *
  */
-void plot_things(double **kArrays, double **pi1Arrays, double **pi2Arrays, size_t length)
+void plot_things(std::vector<TLorentzVector> kVectors,
+                 std::vector<TLorentzVector> pi1Vectors,
+                 std::vector<TLorentzVector> pi2Vectors)
 {
+    size_t length = kVectors.size();
 
     // Plot K energies
     auto  kCanvas = new TCanvas("K energies", "K energies", 600, 600);
     TH1D *hist    = new TH1D("K energies", "K energies", 100, 0.45, 1);
-    hist->FillN(length, kArrays[3], 0);
+    hist->FillN(length, vector2Array(kVectors, 3), 0);
     hist->Draw();
 
     // Plot CoM energies on a new canvas
-    auto    comCanvas = new TCanvas("CoM Energies", "CoM Energies", 600, 600);
-    double *s01       = s(kArrays, pi1Arrays, length);
-    double *s02       = s(kArrays, pi2Arrays, length);
-    TGraph *myGraph   = new TGraph(length, s(kArrays, pi1Arrays, length), s(kArrays, pi2Arrays, length));
+    auto                      comCanvas = new TCanvas("CoM Energies", "CoM Energies", 600, 600);
+    const std::vector<double> s01       = s(kVectors, pi1Vectors);
+    const std::vector<double> s02       = s(kVectors, pi2Vectors);
+    TGraph *                  myGraph   = new TGraph(length, s01.data(), s02.data());
     myGraph->Draw("AP");
-
-    delete[] s01;
-    delete[] s02;
 }
 
 /*
@@ -119,25 +138,6 @@ std::vector<TLorentzVector> writeVector(TTree &myTree, const std::string &partic
     writeData(myTree, particleName + "_E", myVector, 3);
 
     return myVector;
-}
-
-/*
- * From a vector of TLorentzVectors and the desired index (0,1,2,3), find a C-style array of data
- *
- * Allocates memory to the array which must be freed by the caller.
- *
- * e.g. vector2Array(myVector, 0) for x-momentum
- */
-double *vector2Array(const std::vector<TLorentzVector> &particleVector, const size_t index)
-{
-    size_t  length   = particleVector.size();
-    double *outArray = new double[length];
-
-    for (size_t i = 0; i < length; ++i) {
-        outArray[i] = particleVector[i][index];
-    }
-
-    return outArray;
 }
 
 /*
@@ -199,7 +199,7 @@ void bin_generated_decays(TFile *inputFile)
     }
 
     // Make some plots to check that the data from ROOT has been read in correctly
-    // plot_things(kArrays, pi1Arrays, pi2Arrays, length);
+    plot_things(kVectors, pi1Vectors, pi2Vectors);
 
     // Output hadronic parameters
     std::cout << "==== Global: =====================" << std::endl;
