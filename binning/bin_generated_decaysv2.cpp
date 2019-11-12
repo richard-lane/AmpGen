@@ -151,47 +151,63 @@ double **writeArrays(TTree *myTree, const char *name, size_t length)
 }
 
 /*
+ * Write the data on branchName to the index'th position of each TLorentzVector in myVector.
+ * e.g. to write x-momenta of a particle described by ROOT branch foo_Px, call writeData("foo_Px", myVector, 0)
+ *
+ * The TLorentzVector should be of the form (Px, Py, Pz, E).
+ */
+inline void
+writeData(TTree &myTree, const std::string &branchName, std::vector<TLorentzVector> &myVector, const size_t &index)
+{
+    double myData{0.0};
+
+    myTree.SetBranchAddress(branchName.c_str(), &myData);
+    for (Long64_t i = 0; i < myTree.GetEntries(); ++i) {
+        myTree.GetEntry(i);
+        myVector[i][index] = myData;
+    }
+    // Reset all branch addresses to avoid a bug where repeatedly calling this function would set an array to the wrong
+    // values
+    myTree.ResetBranchAddresses();
+}
+
+/*
  * Write a vector of TLorentzVectors containing the data for the particle branchName
  */
-std::vector<TLorentzVector> writeVector(TTree *myTree, std::string particleName)
+std::vector<TLorentzVector> writeVector(TTree &myTree, const std::string &particleName)
 {
-    std::vector<TLorentzVector> myVector = std::vector<TLorentzVector>(myTree->GetEntries());
-    double                      myData{0.0};
+    std::vector<TLorentzVector> myVector = std::vector<TLorentzVector>(myTree.GetEntries());
 
     std::string pxBranchName = particleName + "_Px";
     std::string pyBranchName = particleName + "_Py";
     std::string pzBranchName = particleName + "_Pz";
     std::string eBranchName  = particleName + "_E";
 
-    myTree->SetBranchAddress(pxBranchName.c_str(), &myData);
-    for (Long64_t i = 0; i < myTree->GetEntries(); ++i) {
-        myTree->GetEntry(i);
-        myVector[i][0] = myData;
-    }
-    myTree->ResetBranchAddresses();
-
-    myTree->SetBranchAddress(pyBranchName.c_str(), &myData);
-    for (Long64_t i = 0; i < myTree->GetEntries(); ++i) {
-        myTree->GetEntry(i);
-        myVector[i][1] = myData;
-    }
-    myTree->ResetBranchAddresses();
-
-    myTree->SetBranchAddress(pzBranchName.c_str(), &myData);
-    for (Long64_t i = 0; i < myTree->GetEntries(); ++i) {
-        myTree->GetEntry(i);
-        myVector[i][2] = myData;
-    }
-    myTree->ResetBranchAddresses();
-
-    myTree->SetBranchAddress(eBranchName.c_str(), &myData);
-    for (Long64_t i = 0; i < myTree->GetEntries(); ++i) {
-        myTree->GetEntry(i);
-        myVector[i][3] = myData;
-    }
-    myTree->ResetBranchAddresses();
+    writeData(myTree, particleName + "_Px", myVector, 0);
+    writeData(myTree, particleName + "_Py", myVector, 1);
+    writeData(myTree, particleName + "_Pz", myVector, 2);
+    writeData(myTree, particleName + "_E", myVector, 3);
 
     return myVector;
+}
+
+/*
+ * From a vector of TLorentzVectors and the desired index (0,1,2,3), find a C-style array of data
+ *
+ * Allocates memory to the array which must be freed by the caller.
+ *
+ * e.g. vector2Array(myVector, 0) for x-momentum
+ */
+double *vector2Array(const std::vector<TLorentzVector> &particleVector, const size_t index)
+{
+    size_t  length   = particleVector.size();
+    double *outArray = new double[length];
+
+    for (size_t i = 0; i < length; ++i) {
+        outArray[i] = particleVector[i][index];
+    }
+
+    return outArray;
 }
 
 /*
@@ -215,17 +231,16 @@ void bin_generated_decays(TFile *inputFile)
     double **pi3Arrays = writeArrays(myTree, "_4_pi~", length);
 
     // Create vectors of particle data
-    std::vector<TLorentzVector> kVectors = writeVector(myTree, "_1_K~");
+    std::vector<TLorentzVector> kVectors = writeVector(*myTree, "_1_K~");
 
-    std::vector<double> kpx = std::vector<double>(length);
-    for (size_t i = 0; i < length; ++i) {
-        kpx[i] = kVectors[i][0];
-    }
+    double *kpx = vector2Array(kVectors, 0);
 
     auto  kCanvas = new TCanvas("K Px", "K Px", 600, 600);
     TH1D *hist    = new TH1D("K Px", "K Px", 100, -1, 1);
-    hist->FillN(length, kpx.data(), 0);
+    hist->FillN(length, kpx, 0);
     hist->Draw();
+
+    delete[] kpx;
 
     // Apply scaling and rotation to the DCS amplitude such that we get dcs/cf amplitude ratio 'r' = 0.055
     // and the average relative strong-phase between the two amplitudes ~ 0.
