@@ -143,6 +143,7 @@ std::vector<TLorentzVector> writeVector(TTree &myTree, const std::string &partic
 void bin_generated_decays(TFile *inputFile)
 {
     // ---- Parameters
+    //
     // This section just sets up parameters to be used later
     /// initialise global hadronic parameters, and parameters in each of the bins.
     std::complex<double>              z(0, 0);
@@ -162,6 +163,7 @@ void bin_generated_decays(TFile *inputFile)
     k3pi_binning::binning bins(dcsFile, cfFile, dcs_offset, {BIN_LIMITS});
 
     // ---- Calculations
+    //
     // Read in the tree and branches from the provided ROOT file
     // The tree of interest is DalitzEventList as this contains the decay products' kinematic data
     TTree *myTree = nullptr;
