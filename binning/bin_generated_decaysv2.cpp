@@ -151,6 +151,50 @@ double **writeArrays(TTree *myTree, const char *name, size_t length)
 }
 
 /*
+ * Write a vector of TLorentzVectors containing the data for the particle branchName
+ */
+std::vector<TLorentzVector> writeVector(TTree *myTree, std::string particleName)
+{
+    std::vector<TLorentzVector> myVector = std::vector<TLorentzVector>(myTree->GetEntries());
+    double                      myData{0.0};
+
+    std::string pxBranchName = particleName + "_Px";
+    std::string pyBranchName = particleName + "_Py";
+    std::string pzBranchName = particleName + "_Pz";
+    std::string eBranchName  = particleName + "_E";
+
+    myTree->SetBranchAddress(pxBranchName.c_str(), &myData);
+    for (Long64_t i = 0; i < myTree->GetEntries(); ++i) {
+        myTree->GetEntry(i);
+        myVector[i][0] = myData;
+    }
+    myTree->ResetBranchAddresses();
+
+    myTree->SetBranchAddress(pyBranchName.c_str(), &myData);
+    for (Long64_t i = 0; i < myTree->GetEntries(); ++i) {
+        myTree->GetEntry(i);
+        myVector[i][1] = myData;
+    }
+    myTree->ResetBranchAddresses();
+
+    myTree->SetBranchAddress(pzBranchName.c_str(), &myData);
+    for (Long64_t i = 0; i < myTree->GetEntries(); ++i) {
+        myTree->GetEntry(i);
+        myVector[i][2] = myData;
+    }
+    myTree->ResetBranchAddresses();
+
+    myTree->SetBranchAddress(eBranchName.c_str(), &myData);
+    for (Long64_t i = 0; i < myTree->GetEntries(); ++i) {
+        myTree->GetEntry(i);
+        myVector[i][3] = myData;
+    }
+    myTree->ResetBranchAddresses();
+
+    return myVector;
+}
+
+/*
  * Bin the decays modelled an AmpGen generated inputFile into phase bins as defined by $BIN_LIMITS
  *
  */
@@ -171,21 +215,17 @@ void bin_generated_decays(TFile *inputFile)
     double **pi3Arrays = writeArrays(myTree, "_4_pi~", length);
 
     // Create vectors of particle data
-    std::vector<double> kPxVector = std::vector<double>(length);
-    double              myData{0.0};
+    std::vector<TLorentzVector> kVectors = writeVector(myTree, "_1_K~");
 
-    // Point the desired branch at the myData variable.
-    myTree->SetBranchAddress("_1_K~_Px", &myData);
-
-    // Create an array of the appropriate size to store this data
-    for (Long64_t i = 0; i < myTree->GetEntries(); ++i) {
-        myTree->GetEntry(i);
-        kPxVector[i] = myData;
-    }
+    std::vector<double> kpx = std::vector<double>(length);
     for (size_t i = 0; i < length; ++i) {
-        std::cout << kPxVector[i] << std::endl;
+        kpx[i] = kVectors[i][0];
     }
-    myTree->ResetBranchAddresses();
+
+    auto  kCanvas = new TCanvas("K Px", "K Px", 600, 600);
+    TH1D *hist    = new TH1D("K Px", "K Px", 100, -1, 1);
+    hist->FillN(length, kpx.data(), 0);
+    hist->Draw();
 
     // Apply scaling and rotation to the DCS amplitude such that we get dcs/cf amplitude ratio 'r' = 0.055
     // and the average relative strong-phase between the two amplitudes ~ 0.
