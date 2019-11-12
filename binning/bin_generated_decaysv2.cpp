@@ -86,71 +86,6 @@ void plot_things(double **kArrays, double **pi1Arrays, double **pi2Arrays, size_
 }
 
 /*
- * Store the data from myBranch on myTree into myArray
- */
-void writeArray(TTree *myTree, const char *myBranchName, double *myArray)
-{
-    const long long numEntries{myTree->GetEntries()};
-    double          myData{0.0};
-
-    // Point the desired branch at the myData variable.
-    myTree->SetBranchAddress(myBranchName, &myData);
-
-    // Create an array of the appropriate size to store this data
-    for (Long64_t i = 0; i < myTree->GetEntries(); ++i) {
-        myTree->GetEntry(i);
-        myArray[i] = myData;
-    }
-
-    // Reset all branch addresses to avoid a bug where repeatedly calling this function would set an array to the wrong
-    // values
-    myTree->ResetBranchAddresses();
-}
-
-/*
- * Write an array of arrays for storing particle data
- *
- * Allocates memory for the data arrays which must be freed by the caller.
- * Also allocates memory to the array of arrays which must be freed
- */
-double **writeArrays(TTree *myTree, const char *name, size_t length)
-{
-
-    // Generate names for the arrays
-    // This is a stupid way to initialise an array but i can't think of a better one
-    char xArrayName[NAME_LENGTH]{
-        name[0], name[1], name[2], name[3], name[4], name[5], name[6], name[7], name[8], name[9]};
-    char yArrayName[NAME_LENGTH]{
-        name[0], name[1], name[2], name[3], name[4], name[5], name[6], name[7], name[8], name[9]};
-    char zArrayName[NAME_LENGTH]{
-        name[0], name[1], name[2], name[3], name[4], name[5], name[6], name[7], name[8], name[9]};
-    char eArrayName[NAME_LENGTH]{
-        name[0], name[1], name[2], name[3], name[4], name[5], name[6], name[7], name[8], name[9]};
-
-    strcat(xArrayName, "_Px");
-    strcat(yArrayName, "_Py");
-    strcat(zArrayName, "_Pz");
-    strcat(eArrayName, "_E");
-
-    // Allocate memory for data arrays
-    double *const xArray = new double[length];
-    double *const yArray = new double[length];
-    double *const zArray = new double[length];
-    double *const eArray = new double[length];
-
-    // Create an array of arrays
-    double **arrays = new double *[4] { xArray, yArray, zArray, eArray };
-
-    // Write the data to the arrays
-    writeArray(myTree, xArrayName, xArray);
-    writeArray(myTree, yArrayName, yArray);
-    writeArray(myTree, zArrayName, zArray);
-    writeArray(myTree, eArrayName, eArray);
-
-    return arrays;
-}
-
-/*
  * Write the data on branchName to the index'th position of each TLorentzVector in myVector.
  * e.g. to write x-momenta of a particle described by ROOT branch foo_Px, call writeData("foo_Px", myVector, 0)
  *
@@ -211,21 +146,17 @@ double *vector2Array(const std::vector<TLorentzVector> &particleVector, const si
  */
 void bin_generated_decays(TFile *inputFile)
 {
-    // Read in the tree and branches from the provided ROOT file
-    // The tree of interest is DalitzEventList as this contains the decay products' kinematic data
-    TTree *myTree = nullptr;
-    inputFile->GetObject("DalitzEventList", myTree);
+    // ---- Parameters
+    // This section just sets up parameters to be used later
+    /// initialise global hadronic parameters, and parameters in each of the bins.
+    std::complex<double>              z(0, 0);
+    double                            n_cf(0);
+    double                            n_dcs(0);
+    std::vector<std::complex<double>> z_binned(NUM_BINS, std::complex<double>(0, 0));
+    std::vector<double>               n_cf_binned(NUM_BINS, 0);
+    std::vector<double>               n_dcs_binned(NUM_BINS, 0);
 
-    // Number of datapoints
-    const unsigned int length = myTree->GetEntries();
-
-    // Create vectors of particle data
-    std::vector<TLorentzVector> kVectors   = writeVector(*myTree, "_1_K~");
-    std::vector<TLorentzVector> pi1Vectors = writeVector(*myTree, "_2_pi#");
-    std::vector<TLorentzVector> pi2Vectors = writeVector(*myTree, "_3_pi#");
-    std::vector<TLorentzVector> pi3Vectors = writeVector(*myTree, "_4_pi~");
-
-    // Apply scaling and rotation to the DCS amplitude such that we get dcs/cf amplitude ratio 'r' = 0.055
+    // Scaling and rotation to the DCS amplitude such that we get dcs/cf amplitude ratio 'r' = 0.055
     // and the average relative strong-phase between the two amplitudes ~ 0.
     std::complex<double> dcs_offset = DCS_MAGNITUDE * exp(std::complex<double>(0, 1) * DCS_PHASE * M_PI / 180.);
 
@@ -234,13 +165,17 @@ void bin_generated_decays(TFile *inputFile)
     const std::string     cfFile{"binning/cf.so"};
     k3pi_binning::binning bins(dcsFile, cfFile, dcs_offset, {BIN_LIMITS});
 
-    /// initialise global hadronic parameters, and parameters in each of the bins.
-    std::complex<double>              z(0, 0);
-    double                            n_cf(0);
-    double                            n_dcs(0);
-    std::vector<std::complex<double>> z_binned(NUM_BINS, std::complex<double>(0, 0));
-    std::vector<double>               n_cf_binned(NUM_BINS, 0);
-    std::vector<double>               n_dcs_binned(NUM_BINS, 0);
+    // ---- Calculations
+    // Read in the tree and branches from the provided ROOT file
+    // The tree of interest is DalitzEventList as this contains the decay products' kinematic data
+    TTree *myTree = nullptr;
+    inputFile->GetObject("DalitzEventList", myTree);
+
+    // Create vectors of particle data
+    std::vector<TLorentzVector> kVectors   = writeVector(*myTree, "_1_K~");
+    std::vector<TLorentzVector> pi1Vectors = writeVector(*myTree, "_2_pi#");
+    std::vector<TLorentzVector> pi2Vectors = writeVector(*myTree, "_3_pi#");
+    std::vector<TLorentzVector> pi3Vectors = writeVector(*myTree, "_4_pi~");
 
     for (int i = 0; i < myTree->GetEntries(); ++i) {
         // Create a vector of TLorentzVectors for this event (K+, pi-, pi-, pi+)
