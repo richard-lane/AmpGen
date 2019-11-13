@@ -77,6 +77,19 @@ const std::vector<double> s(const std::vector<TLorentzVector> &particleA, const 
 }
 
 /*
+ * Plot a 100-bin histogram from an array
+ */
+void plot_hist(const std::string &title, double *myData, size_t length, const float xmin, const float xmax)
+{
+
+    const char *titleStr = title.c_str();
+    auto        kCanvas  = new TCanvas(titleStr, titleStr, 600, 600);
+    TH1D *      hist     = new TH1D(titleStr, titleStr, 100, xmin, xmax);
+    hist->FillN(length, myData, 0);
+    hist->Draw();
+}
+
+/*
  * Plot the K energies and make a plot of s01 vs s02 to check consistency with the ROOT TBrowser
  *
  */
@@ -87,10 +100,7 @@ void plot_things(const std::vector<TLorentzVector> &kVectors,
     size_t length = kVectors.size();
 
     // Plot K energies
-    auto  kCanvas = new TCanvas("K energies", "K energies", 600, 600);
-    TH1D *hist    = new TH1D("K energies", "K energies", 100, 0.45, 1);
-    hist->FillN(length, vector2Array(kVectors, 3), 0);
-    hist->Draw();
+    plot_hist("K energies", vector2Array(kVectors, 3), length, 0.45, 1);
 
     // Plot CoM energies on a new canvas
     auto                      comCanvas = new TCanvas("CoM Energies", "CoM Energies", 600, 600);
@@ -98,6 +108,23 @@ void plot_things(const std::vector<TLorentzVector> &kVectors,
     const std::vector<double> s02       = s(kVectors, pi2Vectors);
     TGraph *                  myGraph   = new TGraph(length, s01.data(), s02.data());
     myGraph->Draw("AP");
+}
+
+/*
+ * Write the data on branchName to each TLorentzVector in myVector.
+ */
+inline void writeData(TTree &myTree, const std::string &branchName, std::vector<double> &myVector)
+{
+    double myData{0.0};
+
+    myTree.SetBranchAddress(branchName.c_str(), &myData);
+    for (Long64_t i = 0; i < myTree.GetEntries(); ++i) {
+        myTree.GetEntry(i);
+        myVector[i] = myData;
+    }
+    // Reset all branch addresses to avoid a bug where repeatedly calling this function would set an array to the wrong
+    // values
+    myTree.ResetBranchAddresses();
 }
 
 /*
@@ -198,6 +225,12 @@ void bin_generated_decays(TFile *inputFile)
 
     // Make some plots to check that the data from ROOT has been read in correctly
     plot_things(kVectors, pi1Vectors, pi2Vectors);
+
+    // find times
+    std::vector<double> times(myTree->GetEntries(), -1);
+    writeData(*myTree, "D_decayTime", times);
+
+    plot_hist("times", times.data(), times.size(), 0, 0.003);
 
     // Output hadronic parameters
     std::cout << "==== Global: =====================" << std::endl;
