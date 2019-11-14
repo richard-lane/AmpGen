@@ -61,10 +61,14 @@ void example_generate_decays()
     }
 
     // Create vectors of K and pi data
-    std::vector<double> kE  = findParticleData(0, 3, eventVectors);
-    std::vector<double> kPx = findParticleData(0, 0, eventVectors);
-    std::vector<double> kPy = findParticleData(0, 1, eventVectors);
-    std::vector<double> kPz = findParticleData(0, 2, eventVectors);
+    std::vector<double> kE            = findParticleData(0, 3, eventVectors);
+    double              kEArray[1000];
+    for (size_t i = 0; i < kE.size(); ++i){
+        kEArray[i] = kE.data()[i];
+    }
+    std::vector<double> kPx           = findParticleData(0, 0, eventVectors);
+    std::vector<double> kPy           = findParticleData(0, 1, eventVectors);
+    std::vector<double> kPz           = findParticleData(0, 2, eventVectors);
 
     std::vector<double> pi1E  = findParticleData(1, 3, eventVectors);
     std::vector<double> pi1Px = findParticleData(1, 0, eventVectors);
@@ -83,32 +87,32 @@ void example_generate_decays()
 
     // ---- Write them to a root file
     // This file must be initialised before the tree is created so that ROOT knows which file to write the tree to
-    TFile outFile("GeneratedDecays.root", "RECREATE");
+    TFile outFile("GeneratedDecays.root", "CREATE");
 
     //     Create a TTree called DalitzEventList
     TTree *myTree = new TTree("DalitzEventList", "Generated D->K3pi decays");
 
     //     Write the data to branches on the tree called the right things
     unsigned long long bufsize = sizeof(double) * eventVectors.size();
-    myTree->Branch("_1_K~_E", &kE);
-    myTree->Branch("_1_K~_Px", &kPx);
-    myTree->Branch("_1_K~_Py", &kPy);
-    myTree->Branch("_1_K~_Pz", &kPz);
+    myTree->Branch("_1_K~_Px", kEArray, "kEArray[1000]/D", bufsize);
+    myTree->Branch("_1_K~_Py", kPy.data(), "kPy/D", bufsize);
+    myTree->Branch("_1_K~_Pz", kPz.data(), "kPz/D", bufsize);
+    myTree->Branch("_1_K~_E", kE.data(), "kE/D", bufsize);
 
-    myTree->Branch("_2_pi#_Px", &pi1Px);
-    myTree->Branch("_2_pi#_Py", &pi1Py);
-    myTree->Branch("_2_pi#_Pz", &pi1Pz);
-    myTree->Branch("_2_pi#_E", &pi1E);
+    myTree->Branch("_2_pi#_Px", pi1Px.data(), "pi1Px/D", bufsize);
+    myTree->Branch("_2_pi#_Py", pi1Py.data(), "pi1Py/D", bufsize);
+    myTree->Branch("_2_pi#_Pz", pi1Pz.data(), "pi1Pz/D", bufsize);
+    myTree->Branch("_2_pi#_E", pi1E.data(), "pi1E/D", bufsize);
 
-    myTree->Branch("_3_pi#_Px", &pi2Px);
-    myTree->Branch("_3_pi#_Py", &pi2Py);
-    myTree->Branch("_3_pi#_Pz", &pi2Pz);
-    myTree->Branch("_3_pi#_E", &pi2E);
+    myTree->Branch("_3_pi#_Px", pi2Px.data(), "pi2Px/D", bufsize);
+    myTree->Branch("_3_pi#_Py", pi2Py.data(), "pi2Py/D", bufsize);
+    myTree->Branch("_3_pi#_Pz", pi2Pz.data(), "pi2Pz/D", bufsize);
+    myTree->Branch("_3_pi#_E", pi2E.data(), "pi2E/D", bufsize);
 
-    myTree->Branch("_4_pi~_Px", &pi3Px);
-    myTree->Branch("_4_pi~_Py", &pi3Py);
-    myTree->Branch("_4_pi~_Pz", &pi3Pz);
-    myTree->Branch("_4_pi~_E", &pi3E);
+    myTree->Branch("_4_pi~_Px", pi3Px.data(), "pi3Px/D", bufsize);
+    myTree->Branch("_4_pi~_Py", pi3Py.data(), "pi3Py/D", bufsize);
+    myTree->Branch("_4_pi~_Pz", pi3Pz.data(), "pi3Pz/D", bufsize);
+    myTree->Branch("_4_pi~_E", pi3E.data(), "pi3E/D", bufsize);
 
     myTree->Fill();
 
