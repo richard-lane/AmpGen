@@ -15,7 +15,7 @@
 #include "k3pi_binning.h"
 
 // ---- Magic Numbers
-#define NUM_EVENTS 1000000
+#define NUM_EVENTS 1000
 
 #define NUMBER_PRODUCTS 4
 #define K_MASS 0.493677
@@ -61,19 +61,57 @@ void example_generate_decays()
     }
 
     // Create vectors of K and pi data
-    std::vector<double> kE = findParticleData(1, 3, eventVectors);
+    std::vector<double> kE  = findParticleData(0, 3, eventVectors);
+    std::vector<double> kPx = findParticleData(0, 0, eventVectors);
+    std::vector<double> kPy = findParticleData(0, 1, eventVectors);
+    std::vector<double> kPz = findParticleData(0, 2, eventVectors);
 
-    auto  kCanvas = new TCanvas("kE", "kE", 600, 600);
-    TH1D *hist    = new TH1D("kE", "kE", 100, 0, 1);
-    hist->FillN(kE.size(), kE.data(), 0);
-    hist->Draw();
+    std::vector<double> pi1E  = findParticleData(1, 3, eventVectors);
+    std::vector<double> pi1Px = findParticleData(1, 0, eventVectors);
+    std::vector<double> pi1Py = findParticleData(1, 1, eventVectors);
+    std::vector<double> pi1Pz = findParticleData(1, 2, eventVectors);
+
+    std::vector<double> pi2E  = findParticleData(2, 3, eventVectors);
+    std::vector<double> pi2Px = findParticleData(2, 0, eventVectors);
+    std::vector<double> pi2Py = findParticleData(2, 1, eventVectors);
+    std::vector<double> pi2Pz = findParticleData(2, 2, eventVectors);
+
+    std::vector<double> pi3E  = findParticleData(3, 3, eventVectors);
+    std::vector<double> pi3Px = findParticleData(3, 0, eventVectors);
+    std::vector<double> pi3Py = findParticleData(3, 1, eventVectors);
+    std::vector<double> pi3Pz = findParticleData(3, 2, eventVectors);
 
     // ---- Write them to a root file
-    //     Create a new ROOT file
-    // TFile outFile("GeneratedDecays.root", "CREATE");
+    // This file must be initialised before the tree is created so that ROOT knows which file to write the tree to
+    TFile outFile("GeneratedDecays.root", "RECREATE");
 
     //     Create a TTree called DalitzEventList
-    // TTree *myTree = new TTree("DalitzEventList", "Generated D->K3pi decays");
+    TTree *myTree = new TTree("DalitzEventList", "Generated D->K3pi decays");
 
     //     Write the data to branches on the tree called the right things
+    unsigned long long bufsize = sizeof(double) * eventVectors.size();
+    myTree->Branch("_1_K~_E", &kE);
+    myTree->Branch("_1_K~_Px", &kPx);
+    myTree->Branch("_1_K~_Py", &kPy);
+    myTree->Branch("_1_K~_Pz", &kPz);
+
+    myTree->Branch("_2_pi#_Px", &pi1Px);
+    myTree->Branch("_2_pi#_Py", &pi1Py);
+    myTree->Branch("_2_pi#_Pz", &pi1Pz);
+    myTree->Branch("_2_pi#_E", &pi1E);
+
+    myTree->Branch("_3_pi#_Px", &pi2Px);
+    myTree->Branch("_3_pi#_Py", &pi2Py);
+    myTree->Branch("_3_pi#_Pz", &pi2Pz);
+    myTree->Branch("_3_pi#_E", &pi2E);
+
+    myTree->Branch("_4_pi~_Px", &pi3Px);
+    myTree->Branch("_4_pi~_Py", &pi3Py);
+    myTree->Branch("_4_pi~_Pz", &pi3Pz);
+    myTree->Branch("_4_pi~_E", &pi3E);
+
+    myTree->Fill();
+
+    outFile.Write();
+    outFile.Close();
 }
