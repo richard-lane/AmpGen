@@ -1,3 +1,9 @@
+/*
+ * Small macro to test that the k3pibinning phase space gives the right value of R when using my bin_generated_decays.cpp thing
+ * 
+ * As of 14/11/19, it does
+ * 
+ */
 #include <cmath>
 #include <complex>
 #include <cstring>
