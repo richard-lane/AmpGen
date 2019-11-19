@@ -194,8 +194,8 @@ void bin_generated_decays(TFile *inputFile)
 
     // Create a vector for each bin holding pairs of event DCS/CF amplitudes and the time
     // Create vectors for each bin holding DCS/CF amplitudes and the time
-    std::vector<std::vector<double>> binRatio(NUM_BINS, std::vector<double>(length, 0.0));
-    std::vector<std::vector<double>> binTimes(NUM_BINS, std::vector<double>(length, -1.0));
+    std::vector<std::vector<double>> binRatio(NUM_BINS, std::vector<double>());
+    std::vector<std::vector<double>> binTimes(NUM_BINS, std::vector<double>());
 
     std::vector<double> times(length, -1);
     writeData(*myTree, "D_decayTime", times);
@@ -217,6 +217,26 @@ void bin_generated_decays(TFile *inputFile)
         binRatio[bin].push_back(dcsCfRatio);
         binTimes[bin].push_back(times[i]);
     }
+
+    // Scatter plots of ratio vs time for each bin
+    TGraph *g0 = new TGraph(binRatio[0].size(), binTimes[0].data(), binRatio[0].data());
+    g0->Draw("ap");
+
+    TCanvas *c1 = new TCanvas();
+    TGraph * g1 = new TGraph(binRatio[1].size(), binTimes[1].data(), binRatio[1].data());
+    g1->Draw("ap");
+
+    TCanvas *c2 = new TCanvas();
+    TGraph * g2 = new TGraph(binRatio[2].size(), binTimes[2].data(), binRatio[2].data());
+    g2->Draw("ap");
+
+    TCanvas *c3 = new TCanvas();
+    TGraph * g3 = new TGraph(binRatio[3].size(), binTimes[3].data(), binRatio[3].data());
+    g3->Draw("ap");
+
+    TCanvas *c4 = new TCanvas();
+    TGraph * g4 = new TGraph(binRatio[4].size(), binTimes[4].data(), binRatio[4].data());
+    g4->Draw("ap");
 
     // Make some plots to check that the data from ROOT has been read in correctly
     // plot_things(kVectors, pi1Vectors, pi2Vectors);
