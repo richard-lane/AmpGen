@@ -184,6 +184,7 @@ void bin_generated_decays(TFile *inputFile)
     // The tree of interest is DalitzEventList as this contains the decay products' kinematic data
     TTree *myTree = nullptr;
     inputFile->GetObject("DalitzEventList", myTree);
+    long long length{myTree->GetEntries()};
 
     // Read in vectors of particle data from the ROOT file
     const std::vector<TLorentzVector> kVectors   = writeVector(*myTree, "_1_K~");
@@ -192,12 +193,14 @@ void bin_generated_decays(TFile *inputFile)
     const std::vector<TLorentzVector> pi3Vectors = writeVector(*myTree, "_4_pi~");
 
     // Create a vector for each bin holding pairs of event DCS/CF amplitudes and the time
-    std::vector<std::vector<std::pair<double, double>>> binData(NUM_BINS);
+    // Create vectors for each bin holding DCS/CF amplitudes and the time
+    std::vector<std::vector<double>> binRatio(NUM_BINS, std::vector<double>(length, 0.0));
+    std::vector<std::vector<double>> binTimes(NUM_BINS, std::vector<double>(length, -1.0));
 
-    std::vector<double> times(myTree->GetEntries(), -1);
+    std::vector<double> times(length, -1);
     writeData(*myTree, "D_decayTime", times);
 
-    for (int i = 0; i < myTree->GetEntries(); ++i) {
+    for (int i = 0; i < length; ++i) {
         // Create a vector of TLorentzVectors for this event (K+, pi-, pi-, pi+)
         std::vector<TLorentzVector> eventVector{kVectors[i], pi1Vectors[i], pi2Vectors[i], pi3Vectors[i]};
         auto                        event = k3pi_binning::eventFromVectors(eventVector);
@@ -209,10 +212,10 @@ void bin_generated_decays(TFile *inputFile)
         // Find which bin the event belongs in
         int bin = bins.bin(eventVector, 1);
 
-        // Create a pair of the DCS/CF amplitude ratio and time
-        double                    dcsCfRatio = abs(eval_dcs / eval_cf);
-        std::pair<double, double> ratioTime(dcsCfRatio, times[i]);
-        binData[bin].push_back(ratioTime);
+        // Log the time and ratio of the event in this bin
+        double dcsCfRatio = abs(eval_dcs / eval_cf);
+        binRatio[bin].push_back(dcsCfRatio);
+        binTimes[bin].push_back(times[i]);
     }
 
     // Make some plots to check that the data from ROOT has been read in correctly
