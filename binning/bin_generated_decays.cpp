@@ -196,11 +196,17 @@ void bin_generated_decays(TFile *inputFile)
     TTree *myTree = nullptr;
     inputFile->GetObject("DalitzEventList", myTree);
 
-    // Create vectors of particle data
+    // Read in vectors of particle data from the ROOT file
     const std::vector<TLorentzVector> kVectors   = writeVector(*myTree, "_1_K~");
     const std::vector<TLorentzVector> pi1Vectors = writeVector(*myTree, "_2_pi#");
     const std::vector<TLorentzVector> pi2Vectors = writeVector(*myTree, "_3_pi#");
     const std::vector<TLorentzVector> pi3Vectors = writeVector(*myTree, "_4_pi~");
+
+    // Create a vector for each bin holding pairs of event DCS/CF amplitudes and the time
+    std::vector<std::vector<std::pair<double, double>>> binData(NUM_BINS);
+
+    std::vector<double> times(myTree->GetEntries(), -1);
+    writeData(*myTree, "D_decayTime", times);
 
     for (int i = 0; i < myTree->GetEntries(); ++i) {
         // Create a vector of TLorentzVectors for this event (K+, pi-, pi-, pi+)
@@ -221,16 +227,15 @@ void bin_generated_decays(TFile *inputFile)
         z_binned[bin] += eval_cf * std::conj(eval_dcs);
         n_cf_binned[bin] += std::norm(eval_cf);
         n_dcs_binned[bin] += std::norm(eval_dcs);
+
+        // Create a pair of the DCS/CF amplitude ratio and time
+        double                    dcsCfRatio = abs(eval_dcs / eval_cf);
+        std::pair<double, double> ratioTime(dcsCfRatio, times[i]);
+        binData[bin].push_back(ratioTime);
     }
 
     // Make some plots to check that the data from ROOT has been read in correctly
-    plot_things(kVectors, pi1Vectors, pi2Vectors);
-
-    // find times
-    std::vector<double> times(myTree->GetEntries(), -1);
-    writeData(*myTree, "D_decayTime", times);
-
-    plot_hist("times", times.data(), times.size(), 0, 0.003);
+    //plot_things(kVectors, pi1Vectors, pi2Vectors);
 
     // Output hadronic parameters
     std::cout << "==== Global: =====================" << std::endl;
