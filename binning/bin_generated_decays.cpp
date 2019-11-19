@@ -170,16 +170,6 @@ std::vector<TLorentzVector> writeVector(TTree &myTree, const std::string &partic
 void bin_generated_decays(TFile *inputFile)
 {
     // ---- Parameters
-    //
-    // This section just sets up parameters to be used later
-    /// initialise global hadronic parameters, and parameters in each of the bins.
-    std::complex<double>              z(0, 0);
-    double                            n_cf(0);
-    double                            n_dcs(0);
-    std::vector<std::complex<double>> z_binned(NUM_BINS, std::complex<double>(0, 0));
-    std::vector<double>               n_cf_binned(NUM_BINS, 0);
-    std::vector<double>               n_dcs_binned(NUM_BINS, 0);
-
     // Scaling and rotation to the DCS amplitude such that we get dcs/cf amplitude ratio 'r' = 0.055
     // and the average relative strong-phase between the two amplitudes ~ 0.
     const std::complex<double> dcs_offset = DCS_MAGNITUDE * exp(std::complex<double>(0, 1) * DCS_PHASE * M_PI / 180.);
@@ -190,7 +180,6 @@ void bin_generated_decays(TFile *inputFile)
     k3pi_binning::binning bins(dcsFile, cfFile, dcs_offset, {BIN_LIMITS});
 
     // ---- Calculations
-    //
     // Read in the tree and branches from the provided ROOT file
     // The tree of interest is DalitzEventList as this contains the decay products' kinematic data
     TTree *myTree = nullptr;
@@ -217,16 +206,8 @@ void bin_generated_decays(TFile *inputFile)
         auto eval_cf  = bins.cf(event.data(), 1);
         auto eval_dcs = dcs_offset * bins.dcs(event.data(), 1);
 
-        // Update the global hadronic parameters
-        z += eval_cf * std::conj(eval_dcs);
-        n_cf += std::norm(eval_cf);
-        n_dcs += std::norm(eval_dcs);
-
-        // Find which bin the event belongs in and update its hadronic parameters
-        auto bin = bins.bin(eventVector, 1);
-        z_binned[bin] += eval_cf * std::conj(eval_dcs);
-        n_cf_binned[bin] += std::norm(eval_cf);
-        n_dcs_binned[bin] += std::norm(eval_dcs);
+        // Find which bin the event belongs in
+        int bin = bins.bin(eventVector, 1);
 
         // Create a pair of the DCS/CF amplitude ratio and time
         double                    dcsCfRatio = abs(eval_dcs / eval_cf);
@@ -235,22 +216,5 @@ void bin_generated_decays(TFile *inputFile)
     }
 
     // Make some plots to check that the data from ROOT has been read in correctly
-    //plot_things(kVectors, pi1Vectors, pi2Vectors);
-
-    // Output hadronic parameters
-    std::cout << "==== Global: =====================" << std::endl;
-    std::cout << "R = " << std::abs(z) / sqrt(n_cf * n_dcs) << "\t// Should be ~0.47" << std::endl;
-    std::cout << "d = " << std::arg(z) * 180 / M_PI << "\t// Should be ~ zero by construction (< 1 degree)"
-              << std::endl;
-    std::cout << "r = " << sqrt(n_dcs / n_cf) << "\t// Should be ~ 0.055" << std::endl;
-
-    for (int i = 0; i < NUM_BINS; ++i) {
-        std::cout << "==== Bin " << i + 1 << ": ======================" << std::endl;
-        std::cout << "R[" << i + 1 << "] = " << std::abs(z_binned[i]) / sqrt(n_cf_binned[i] * n_dcs_binned[i])
-                  << std::endl;
-        std::cout << "d[" << i + 1 << "] = " << std::arg(z_binned[i]) * 180 / M_PI << std::endl;
-        std::cout << "K[" << i + 1 << "] = " << n_dcs_binned[i] / n_dcs << std::endl;
-        std::cout << "K'[" << i + 1 << "] = " << n_cf_binned[i] / n_cf << std::endl;
-    }
-    std::cout << "==================================" << std::endl;
+    // plot_things(kVectors, pi1Vectors, pi2Vectors);
 }
