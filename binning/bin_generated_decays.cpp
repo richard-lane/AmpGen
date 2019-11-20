@@ -224,9 +224,15 @@ void bin_generated_decays(TFile *inputFile)
             binData[i].begin(), binData[i].end(), [](auto &left, auto &right) { return left.second < right.second; });
     }
 
-    // Create vectors of NUM_BIN vectors, each of which will hold a vector of up to 100 either time or data values
-    std::vector<std::vector<std::vector<double>>> binTimes(NUM_BINS);
-    std::vector<std::vector<std::vector<double>>> binRatios(NUM_BINS);
+    // Create two vectors for each bin holding ratio and time data
+    std::vector<std::vector<double>> binRatios(NUM_BINS);
+    std::vector<std::vector<double>> binTimes(NUM_BINS);
+    for (size_t i = 0; i < NUM_BINS; ++i) {
+        for (size_t j = 0; j < binData[i].size(); ++j) {
+            binRatios[i].push_back(binData[i][j].first);
+            binTimes[i].push_back(binData[i][j].second);
+        }
+    }
 
     // Arrange the times into bins of 100 points
     // For each bin:
@@ -236,7 +242,6 @@ void bin_generated_decays(TFile *inputFile)
         size_t binSize  = binData[i].size();
         size_t timeBins = binSize / pointsPerBin + (binSize % pointsPerBin != 0);
 
-        std::cout << binSize << "\t" << timeBins << "\n----\n" << std::endl;
         //   Create two vectors- one for n vectors of 100- times, one for n vectors of 100- ratios
         //   Then create 4 n-length vectors of time/ratio avg/std dev
     }
