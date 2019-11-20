@@ -224,7 +224,22 @@ void bin_generated_decays(TFile *inputFile)
             binData[i].begin(), binData[i].end(), [](auto &left, auto &right) { return left.second < right.second; });
     }
 
+    // Create vectors of NUM_BIN vectors, each of which will hold a vector of up to 100 either time or data values
+    std::vector<std::vector<std::vector<double>>> binTimes(NUM_BINS);
+    std::vector<std::vector<std::vector<double>>> binRatios(NUM_BINS);
+
     // Arrange the times into bins of 100 points
+    // For each bin:
+    size_t pointsPerBin{100};
+    for (size_t i = 0; i < NUM_BINS; ++i) {
+        //   Find how many time bins are needed, n = ( ceil len/100)
+        size_t binSize  = binData[i].size();
+        size_t timeBins = binSize / pointsPerBin + (binSize % pointsPerBin != 0);
+
+        std::cout << binSize << "\t" << timeBins << "\n----\n" << std::endl;
+        //   Create two vectors- one for n vectors of 100- times, one for n vectors of 100- ratios
+        //   Then create 4 n-length vectors of time/ratio avg/std dev
+    }
 
     // Make some plots to check that the data from ROOT has been read in correctly
     // plot_things(kVectors, pi1Vectors, pi2Vectors);
