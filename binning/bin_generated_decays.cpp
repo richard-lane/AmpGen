@@ -164,6 +164,39 @@ std::vector<TLorentzVector> writeVector(TTree &myTree, const std::string &partic
 }
 
 /*
+ * Split a vector of N vectors into a a vector containing N vectors of vectors, each of which has a maximum of chunkSize
+ * elements
+ */
+std::vector<std::vector<std::vector<double>>> splitVectors(const std::vector<std::vector<double>> &myVector,
+                                                           size_t                                  chunkSize)
+{
+    size_t                                        N{myVector.size()};
+    std::vector<std::vector<std::vector<double>>> outVectors(N);
+
+    for (size_t i = 0; i < N; ++i) {
+        // Find the number of subvectors to split this vector into
+        size_t vectorSize = myVector[i].size();
+        size_t numChunks{vectorSize / chunkSize + (vectorSize % chunkSize != 0)};
+
+        // Append numChunks empty vectors to outVectors[i]
+        for (size_t chunk = 0; chunk < numChunks; ++chunk) {
+            std::vector<double> emptySubvector;
+            outVectors[i].push_back(
+                emptySubvector); // this looks wrong, shouldn't outVectors[i] be a vector of vectors?
+        }
+
+        // Loop over all the data in the vector by index
+        // Find which chunk the data belongs in, push it back
+        for (size_t j = 0; j < vectorSize; ++j) {
+            size_t chunkNumber = j / chunkSize;
+            outVectors[i][chunkNumber].push_back(myVector[i][j]);
+        }
+    }
+
+    return outVectors;
+}
+
+/*
  * Bin the decays modelled in an AmpGen generated inputFile into phase bins as defined by $BIN_LIMITS
  *
  */
@@ -245,6 +278,8 @@ void bin_generated_decays(TFile *inputFile)
         //   Create two vectors- one for n vectors of 100- times, one for n vectors of 100- ratios
         //   Then create 4 n-length vectors of time/ratio avg/std dev
     }
+
+    // Use the splitVectors function to find averages and std dev of the ratio and time data in each bin
 
     // Make some plots to check that the data from ROOT has been read in correctly
     // plot_things(kVectors, pi1Vectors, pi2Vectors);
