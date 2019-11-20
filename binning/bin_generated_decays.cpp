@@ -192,11 +192,11 @@ void bin_generated_decays(TFile *inputFile)
     const std::vector<TLorentzVector> pi2Vectors = writeVector(*myTree, "_3_pi#");
     const std::vector<TLorentzVector> pi3Vectors = writeVector(*myTree, "_4_pi~");
 
-    // Create a vector for each bin holding pairs of event DCS/CF amplitudes and the time
-    // Create vectors for each bin holding DCS/CF amplitudes and the time
-    std::vector<std::vector<double>> binRatio(NUM_BINS, std::vector<double>());
-    std::vector<std::vector<double>> binTimes(NUM_BINS, std::vector<double>());
+    // Create a vector of pairs of event ratio/time for each bin
+    // Store these in a vector for convenience
+    std::vector<std::vector<std::pair<double, double>>> binData(NUM_BINS, std::vector<std::pair<double, double>>());
 
+    // Read the data from the ROOT file into a vector
     std::vector<double> times(length, -1);
     writeData(*myTree, "D_decayTime", times);
 
@@ -213,30 +213,71 @@ void bin_generated_decays(TFile *inputFile)
         int bin = bins.bin(eventVector, 1);
 
         // Log the time and ratio of the event in this bin
+        // This might be slow because it's dynamically resizing the vector, but should be ok for our purposes.
         double dcsCfRatio = abs(eval_dcs / eval_cf);
-        binRatio[bin].push_back(dcsCfRatio);
-        binTimes[bin].push_back(times[i]);
+        binData[bin].push_back(std::make_pair(dcsCfRatio, times[i]));
+    }
+
+    // Sort each vector based on time
+    for (size_t i = 0; i < NUM_BINS; ++i) {
+        std::sort(
+            binData[i].begin(), binData[i].end(), [](auto &left, auto &right) { return left.second < right.second; });
     }
 
     // Scatter plots of ratio vs time for each bin
-    TGraph *g0 = new TGraph(binRatio[0].size(), binTimes[0].data(), binRatio[0].data());
+    std::vector<double> bin0Ratio(binData[0].size());
+    std::vector<double> bin1Ratio(binData[1].size());
+    std::vector<double> bin2Ratio(binData[2].size());
+    std::vector<double> bin3Ratio(binData[3].size());
+    std::vector<double> bin4Ratio(binData[4].size());
+
+    std::vector<double> bin0Times(binData[0].size());
+    std::vector<double> bin1Times(binData[1].size());
+    std::vector<double> bin2Times(binData[2].size());
+    std::vector<double> bin3Times(binData[3].size());
+    std::vector<double> bin4Times(binData[4].size());
+
+    for (size_t i = 0; i < binData[0].size(); ++i) {
+        bin0Ratio[i] = binData[0][i].first;
+        bin0Times[i] = binData[0][i].second;
+    }
+    for (size_t i = 0; i < binData[1].size(); ++i) {
+        bin1Ratio[i] = binData[1][i].first;
+        bin1Times[i] = binData[1][i].second;
+    }
+    for (size_t i = 0; i < binData[2].size(); ++i) {
+        bin2Ratio[i] = binData[2][i].first;
+        bin2Times[i] = binData[2][i].second;
+    }
+    for (size_t i = 0; i < binData[3].size(); ++i) {
+        bin3Ratio[i] = binData[3][i].first;
+        bin3Times[i] = binData[3][i].second;
+    }
+    for (size_t i = 0; i < binData[4].size(); ++i) {
+        bin4Ratio[i] = binData[4][i].first;
+        bin4Times[i] = binData[4][i].second;
+    }
+
+    TGraph *g0 = new TGraph(bin0Ratio.size(), bin0Times.data(), bin0Ratio.data());
     g0->Draw("ap");
 
     TCanvas *c1 = new TCanvas();
-    TGraph * g1 = new TGraph(binRatio[1].size(), binTimes[1].data(), binRatio[1].data());
+    TGraph * g1 = new TGraph(bin1Ratio.size(), bin1Times.data(), bin1Ratio.data());
     g1->Draw("ap");
 
     TCanvas *c2 = new TCanvas();
-    TGraph * g2 = new TGraph(binRatio[2].size(), binTimes[2].data(), binRatio[2].data());
+    TGraph * g2 = new TGraph(bin2Ratio.size(), bin2Times.data(), bin2Ratio.data());
     g2->Draw("ap");
 
     TCanvas *c3 = new TCanvas();
-    TGraph * g3 = new TGraph(binRatio[3].size(), binTimes[3].data(), binRatio[3].data());
+    TGraph * g3 = new TGraph(bin3Ratio.size(), bin3Times.data(), bin3Ratio.data());
     g3->Draw("ap");
 
     TCanvas *c4 = new TCanvas();
-    TGraph * g4 = new TGraph(binRatio[4].size(), binTimes[4].data(), binRatio[4].data());
+    TGraph * g4 = new TGraph(bin4Ratio.size(), bin4Times.data(), bin4Ratio.data());
     g4->Draw("ap");
+
+    // Arrange the times into bins of 100 points
 
     // Make some plots to check that the data from ROOT has been read in correctly
     // plot_things(kVectors, pi1Vectors, pi2Vectors);
