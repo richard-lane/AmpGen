@@ -119,7 +119,7 @@ void plot_things(const std::vector<TLorentzVector> &kVectors,
 /*
  * Write the data on branchName to each TLorentzVector in myVector.
  */
-inline void writeData(TTree &myTree, const std::string &branchName, std::vector<double> &myVector)
+void writeData(TTree &myTree, const std::string &branchName, std::vector<double> &myVector)
 {
     double myData{0.0};
 
@@ -227,6 +227,20 @@ double vectorStdDev(const std::vector<double> &vector)
 }
 
 /*
+ * Given a vector of vector of pairs, sort each vector of pairs into ascending order based on the second element in the
+ * pair.
+ *
+ */
+void sortVectorOfPairs(std::vector<std::vector<std::pair<double, double>>> &myVector)
+{
+    // Sort each vector based on time
+    for (size_t i = 0; i < myVector.size(); ++i) {
+        std::sort(
+            myVector[i].begin(), myVector[i].end(), [](auto &left, auto &right) { return left.second < right.second; });
+    }
+}
+
+/*
  * Bin the decays modelled in an AmpGen generated inputFile into phase bins as defined by $BIN_LIMITS
  *
  */
@@ -255,13 +269,13 @@ void bin_generated_decays(TFile *inputFile)
     const std::vector<TLorentzVector> pi2Vectors = writeVector(*myTree, "_3_pi#");
     const std::vector<TLorentzVector> pi3Vectors = writeVector(*myTree, "_4_pi~");
 
+    // Read the time data from the ROOT file into a vector
+    std::vector<double> times(length, -1);
+    writeData(*myTree, "D_decayTime", times);
+
     // Create a vector of pairs of event ratio/time for each bin
     // Store these in a vector for convenience
     std::vector<std::vector<std::pair<double, double>>> binData(NUM_BINS, std::vector<std::pair<double, double>>());
-
-    // Read the data from the ROOT file into a vector
-    std::vector<double> times(length, -1);
-    writeData(*myTree, "D_decayTime", times);
 
     // Make some plots to check that the data from ROOT has been read in correctly
     // plot_things(kVectors, pi1Vectors, pi2Vectors);
@@ -284,11 +298,14 @@ void bin_generated_decays(TFile *inputFile)
         binData[bin].push_back(std::make_pair(dcsCfRatio, times[i]));
     }
 
-    // Sort each vector based on time
-    for (size_t i = 0; i < NUM_BINS; ++i) {
-        std::sort(
-            binData[i].begin(), binData[i].end(), [](auto &left, auto &right) { return left.second < right.second; });
+    // Find the number of points in each bin
+    std::vector<size_t> binSizes(NUM_BINS);
+    for (size_t bin = 0; bin < NUM_BINS; ++bin) {
+        binSizes[bin] = binData[bin].size();
     }
+
+    // Sort the data in each bin in increasing time order
+    sortVectorOfPairs(binData);
 
     // Create two vectors for each bin holding ratio and time data
     std::vector<std::vector<double>> binRatios(NUM_BINS);
