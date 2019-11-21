@@ -12,6 +12,7 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include <numeric>
 #include <string>
 #include <vector>
 
@@ -197,6 +198,30 @@ std::vector<std::vector<std::vector<double>>> splitVectors(const std::vector<std
 }
 
 /*
+ * Find average of vector
+ */
+double vectorAvg(const std::vector<double> &vector)
+{
+    return std::accumulate(std::begin(vector), std::end(vector), 0.0) / vector.size();
+}
+
+/*
+ * Find std dev of a vector
+ * Could improve implementation so that the avg is passed into this fcn but i dont want to do that
+ */
+double vectorStdDev(const std::vector<double> &vector)
+{
+    size_t              size = vector.size();
+    double              mean = vectorAvg(vector);
+    std::vector<double> diff(size);
+
+    std::transform(vector.begin(), vector.end(), diff.begin(), std::bind2nd(std::minus<double>(), mean));
+    double sqSum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
+
+    return std::sqrt(sqSum / size);
+}
+
+/*
  * Bin the decays modelled in an AmpGen generated inputFile into phase bins as defined by $BIN_LIMITS
  *
  */
@@ -233,6 +258,9 @@ void bin_generated_decays(TFile *inputFile)
     std::vector<double> times(length, -1);
     writeData(*myTree, "D_decayTime", times);
 
+    // Make some plots to check that the data from ROOT has been read in correctly
+    // plot_things(kVectors, pi1Vectors, pi2Vectors);
+
     for (int i = 0; i < length; ++i) {
         // Create a vector of TLorentzVectors for this event (K+, pi-, pi-, pi+)
         std::vector<TLorentzVector> eventVector{kVectors[i], pi1Vectors[i], pi2Vectors[i], pi3Vectors[i]};
@@ -267,20 +295,14 @@ void bin_generated_decays(TFile *inputFile)
         }
     }
 
-    // Arrange the times into bins of 100 points
-    // For each bin:
-    size_t pointsPerBin{100};
-    for (size_t i = 0; i < NUM_BINS; ++i) {
-        //   Find how many time bins are needed, n = ( ceil len/100)
-        size_t binSize  = binData[i].size();
-        size_t timeBins = binSize / pointsPerBin + (binSize % pointsPerBin != 0);
+    // Use the splitVectors function to split the vectors of bin ratios and times into subvectors
+    size_t                                        binSize{100};
+    std::vector<std::vector<std::vector<double>>> splitBinRatios = splitVectors(binRatios, binSize);
+    std::vector<std::vector<std::vector<double>>> splitBinTimes  = splitVectors(binTimes, binSize);
 
-        //   Create two vectors- one for n vectors of 100- times, one for n vectors of 100- ratios
-        //   Then create 4 n-length vectors of time/ratio avg/std dev
-    }
-
-    // Use the splitVectors function to find averages and std dev of the ratio and time data in each bin
-
-    // Make some plots to check that the data from ROOT has been read in correctly
-    // plot_things(kVectors, pi1Vectors, pi2Vectors);
+    // Find average and std dev of ratios and times in each subvector
+    std::vector<std::vector<double>> binRatioAverage(splitBinRatios.size());
+    std::vector<std::vector<double>> binTimesAverage(splitBinTimes.size());
+    std::vector<std::vector<double>> binRatioStdDev(splitBinRatios.size());
+    std::vector<std::vector<double>> binTimesStdDev(splitBinTimes.size());
 }
