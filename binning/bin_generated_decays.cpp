@@ -16,14 +16,12 @@
 #include <string>
 #include <vector>
 
-#include "TCanvas.h"
 #include "TFile.h"
-#include "TGraph.h"
-#include "TH1.h"
 #include "TRandom.h"
 #include "TTree.h"
 
 #include "k3pi_binning.h"
+#include "plottingHelpers.cpp"
 
 // ---- Magic Numbers
 // DCS and CF relative amplitude and phase
@@ -33,88 +31,6 @@
 /// Bin limits in phase, centred on zero by construction
 #define NUM_BINS 5
 #define BIN_LIMITS -39, 0, 43, 180 // not sure what to set these to
-
-/*
- * From a vector of TLorentzVectors and the desired index (0,1,2,3), find a C-style array of data
- *
- * Allocates memory to the array which must be freed by the caller.
- *
- * e.g. vector2Array(myVector, 0) for x-momentum
- */
-double *vector2Array(const std::vector<TLorentzVector> &particleVector, const size_t index)
-{
-    size_t  length   = particleVector.size();
-    double *outArray = new double[length];
-
-    for (size_t i = 0; i < length; ++i) {
-        outArray[i] = particleVector[i][index];
-    }
-
-    return outArray;
-}
-
-/*
- * CoM energy squared of the ab system
- * Takes two vectors of TLorentzVectors as particle data
- *
- * Assumes each entry of the vector is of the form (Px, Py, Pz, E)
- *
- */
-const std::vector<double> s(const std::vector<TLorentzVector> &particleA, const std::vector<TLorentzVector> &particleB)
-{
-    size_t              length = particleA.size();
-    std::vector<double> sValues(particleA.size());
-
-    for (size_t i = 0; i < length; ++i) {
-
-        sValues[i] = std::pow(particleA[i][3], 2) - std::pow(particleA[i][0], 2) - std::pow(particleA[i][1], 2) -
-                     std::pow(particleA[i][2], 2) + std::pow(particleB[i][3], 2) - std::pow(particleB[i][0], 2) -
-                     std::pow(particleB[i][1], 2) - std::pow(particleB[i][2], 2) +
-                     2 * particleA[i][3] * particleB[i][3] - 2 * particleA[i][0] * particleB[i][0] -
-                     2 * particleA[i][1] * particleB[i][1] - 2 * particleA[i][2] * particleB[i][2];
-    }
-
-    return sValues;
-}
-
-/*
- * Plot an n-bin histogram from an array
- */
-void plot_hist(const std::string &title,
-               double *           myData,
-               size_t             length,
-               const float        xmin,
-               const float        xmax,
-               const int          nBins)
-{
-
-    const char *titleStr = title.c_str();
-    auto        kCanvas  = new TCanvas(titleStr, titleStr, 600, 600);
-    TH1D *      hist     = new TH1D(titleStr, titleStr, nBins, xmin, xmax);
-    hist->FillN(length, myData, 0);
-    hist->Draw();
-}
-
-/*
- * Plot the K energies and make a plot of s01 vs s02 to check consistency with the ROOT TBrowser
- *
- */
-void plot_things(const std::vector<TLorentzVector> &kVectors,
-                 const std::vector<TLorentzVector> &pi1Vectors,
-                 const std::vector<TLorentzVector> &pi2Vectors)
-{
-    size_t length = kVectors.size();
-
-    // Plot K energies
-    plot_hist("K energies", vector2Array(kVectors, 3), length, 0.45, 1, 100);
-
-    // Plot CoM energies on a new canvas
-    auto                      comCanvas = new TCanvas("CoM Energies", "CoM Energies", 600, 600);
-    const std::vector<double> s01       = s(kVectors, pi1Vectors);
-    const std::vector<double> s02       = s(kVectors, pi2Vectors);
-    TGraph *                  myGraph   = new TGraph(length, s01.data(), s02.data());
-    myGraph->Draw("AP");
-}
 
 /*
  * Write the data on branchName to each TLorentzVector in myVector.
@@ -139,8 +55,8 @@ void writeData(TTree &myTree, const std::string &branchName, std::vector<double>
  *
  * The TLorentzVector should be of the form (Px, Py, Pz, E).
  */
-inline void
-writeData(TTree &myTree, const std::string &branchName, std::vector<TLorentzVector> &myVector, const size_t &index)
+void
+writeDataToLorentzVectors(TTree &myTree, const std::string &branchName, std::vector<TLorentzVector> &myVector, const size_t &index)
 {
     double myData{0.0};
 
@@ -161,10 +77,10 @@ std::vector<TLorentzVector> writeVector(TTree &myTree, const std::string &partic
 {
     std::vector<TLorentzVector> myVector = std::vector<TLorentzVector>(myTree.GetEntries());
 
-    writeData(myTree, particleName + "_Px", myVector, 0);
-    writeData(myTree, particleName + "_Py", myVector, 1);
-    writeData(myTree, particleName + "_Pz", myVector, 2);
-    writeData(myTree, particleName + "_E", myVector, 3);
+    writeDataToLorentzVectors(myTree, particleName + "_Px", myVector, 0);
+    writeDataToLorentzVectors(myTree, particleName + "_Py", myVector, 1);
+    writeDataToLorentzVectors(myTree, particleName + "_Pz", myVector, 2);
+    writeDataToLorentzVectors(myTree, particleName + "_E", myVector, 3);
 
     return myVector;
 }
@@ -278,7 +194,7 @@ void bin_generated_decays(TFile *inputFile)
     std::vector<std::vector<std::pair<double, double>>> binData(NUM_BINS, std::vector<std::pair<double, double>>());
 
     // Make some plots to check that the data from ROOT has been read in correctly
-    // plot_things(kVectors, pi1Vectors, pi2Vectors);
+    plot_things(kVectors, pi1Vectors, pi2Vectors);
 
     for (int i = 0; i < length; ++i) {
         // Create a vector of TLorentzVectors for this event (K+, pi-, pi-, pi+)
