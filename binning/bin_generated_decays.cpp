@@ -318,6 +318,7 @@ void bin_generated_decays(TFile *inputFile)
     }
 
     // Use the splitVectors function to split the vectors of bin ratios and times into subvectors
+    // Split vectors of ratios and times into subvectors
     size_t                                        binSize{100};
     std::vector<std::vector<std::vector<double>>> splitBinRatios = splitVectors(binRatios, binSize);
     std::vector<std::vector<std::vector<double>>> splitBinTimes  = splitVectors(binTimes, binSize);
