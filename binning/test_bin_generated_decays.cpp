@@ -17,10 +17,8 @@
  */
 class TestException : public std::exception
 {
-  private:
-    std::string message{""};
-
   public:
+    std::string message{""};
     TestException(std::string testName) { message = "Test " + testName + " failed"; }
     const char* what() const noexcept override { return message.c_str(); }
 };
@@ -84,10 +82,14 @@ void testVectorStdDev(void)
 
 void test_bin_generated_decays(void)
 {
+    // List your functions to test here
     std::vector<std::function<void()>> testCases{&testSplitVectors, &testVectorAvg, &testVectorStdDev};
 
     for (auto fcn = testCases.begin(); fcn != testCases.end(); ++fcn) {
-        // Could do some try catch things here to continue running the tests if one fails
-        (*fcn)();
+        try {
+            (*fcn)();
+        } catch (TestException e) {
+            std::cout << e.message << std::endl;
+        }
     }
 }
