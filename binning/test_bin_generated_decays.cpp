@@ -68,11 +68,26 @@ void testVectorAvg(void)
     check(avg == expectedAvg, testName);
 }
 
+/*
+ * Test vector std dev works
+ */
+void testVectorStdDev(void)
+{
+    std::string         testName = "testVectorStdDev";
+    std::vector<double> myVector{1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21};
+    double              expectedStdDev{6.32455532};
+
+    double stdDev = vectorStdDev(myVector);
+
+    check(std::abs(stdDev - expectedStdDev) < 1e-8, testName);
+}
+
 void test_bin_generated_decays(void)
 {
-    std::vector<std::function<void()>> testCases{&testSplitVectors, &testVectorAvg};
+    std::vector<std::function<void()>> testCases{&testSplitVectors, &testVectorAvg, &testVectorStdDev};
 
     for (auto fcn = testCases.begin(); fcn != testCases.end(); ++fcn) {
+        // Could do some try catch things here to continue running the tests if one fails
         (*fcn)();
     }
 }
