@@ -14,6 +14,8 @@
 /*
  * Exception thrown if a test fails
  *
+ * Gets caught by the test runner if raised during a testcase
+ *
  */
 class TestException : public std::exception
 {
@@ -80,10 +82,32 @@ void testVectorStdDev(void)
     check(std::abs(stdDev - expectedStdDev) < 1e-8, testName);
 }
 
+/*
+ * Test sorting a vector of vectors of pairs
+ */
+void testSortVectorofVectorofPairs(void)
+{
+    std::string testName = "testSortVectorofVectorofPairs";
+
+    std::vector<std::vector<std::pair<double, double>>> vectors{
+        {std::make_pair(1, 5), std::make_pair(3, 3), std::make_pair(2, 4), std::make_pair(5, 1), std::make_pair(4, 2)},
+        {std::make_pair(10, 20), std::make_pair(10, 30), std::make_pair(5, 25)}};
+
+    std::vector<std::vector<std::pair<double, double>>> expectedSortedVectors{
+        {std::make_pair(5, 1), std::make_pair(4, 2), std::make_pair(3, 3), std::make_pair(2, 4), std::make_pair(1, 5)},
+        {std::make_pair(10, 20), std::make_pair(5, 25), std::make_pair(10, 30)}};
+
+    std::vector<std::vector<std::pair<double, double>>> sortedVectors(vectors);
+    sortVectorOfPairs(sortedVectors);
+
+    check(sortedVectors == expectedSortedVectors, testName);
+}
+
 void test_bin_generated_decays(void)
 {
     // List your functions to test here
-    std::vector<std::function<void()>> testCases{&testSplitVectors, &testVectorAvg, &testVectorStdDev};
+    std::vector<std::function<void()>> testCases{
+        &testSplitVectors, &testVectorAvg, &testVectorStdDev, &testSortVectorofVectorofPairs};
 
     for (auto fcn = testCases.begin(); fcn != testCases.end(); ++fcn) {
         try {
