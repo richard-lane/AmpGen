@@ -302,6 +302,7 @@ void bin_generated_decays(TFile *inputFile)
     std::vector<size_t> binSizes(NUM_BINS);
     for (size_t bin = 0; bin < NUM_BINS; ++bin) {
         binSizes[bin] = binData[bin].size();
+        std::cout << "points in bin " << bin << ": " << binSizes[bin] << std::endl;
     }
 
     // Sort the data in each bin in increasing time order
@@ -317,25 +318,32 @@ void bin_generated_decays(TFile *inputFile)
         }
     }
 
-    // Use the splitVectors function to split the vectors of bin ratios and times into subvectors
     // Split vectors of ratios and times into subvectors
     size_t                                        binSize{100};
     std::vector<std::vector<std::vector<double>>> splitBinRatios = splitVectors(binRatios, binSize);
     std::vector<std::vector<std::vector<double>>> splitBinTimes  = splitVectors(binTimes, binSize);
 
     // Find average and std dev of ratios and times in each subvector
-    std::vector<std::vector<double>> binRatioAverage(splitBinRatios.size());
-    std::vector<std::vector<double>> binTimesAverage(splitBinTimes.size());
-    std::vector<std::vector<double>> binRatioStdDev(splitBinRatios.size());
-    std::vector<std::vector<double>> binTimesStdDev(splitBinTimes.size());
+    std::vector<std::vector<double>> binRatioAverage(NUM_BINS);
+    std::vector<std::vector<double>> binTimesAverage(NUM_BINS);
+    std::vector<std::vector<double>> binRatioStdDev(NUM_BINS);
+    std::vector<std::vector<double>> binTimesStdDev(NUM_BINS);
 
-    // for (size_t i = 0; i < splitBinTimes.size(); ++i) {
-    //    for (size_t j = 0; j < splitBinTimes[i].size(); ++j) {
-    //        binRatioAverage[j].push_back(vectorAvg(splitBinRatios[i][j]));
-    //        binTimesAverage[j].push_back(vectorAvg(splitBinTimes[i][j]));
+    // Create vectors of the right length to hold the average and std devs for each bin
+    for (size_t bin = 0; bin < splitBinTimes.size(); ++bin) {
+        binRatioAverage[bin] = std::vector<double>(splitBinRatios[bin].size());
+        binTimesAverage[bin] = std::vector<double>(splitBinRatios[bin].size());
+        binRatioStdDev[bin]  = std::vector<double>(splitBinRatios[bin].size());
+        binTimesStdDev[bin]  = std::vector<double>(splitBinRatios[bin].size());
+    }
 
-    //        binRatioStdDev[j].push_back(vectorStdDev(splitBinRatios[i][j]));
-    //        binTimesAverage[j].push_back(vectorStdDev(splitBinTimes[i][j]));
-    //    }
-    //}
+    for (size_t bin = 0; bin < NUM_BINS; ++bin) {
+        for (size_t i = 0; i < splitBinTimes[bin].size(); ++i) {
+            binRatioAverage[bin][i] = vectorAvg(splitBinRatios[bin][i]);
+            binTimesAverage[bin][i] = vectorAvg(splitBinTimes[bin][i]);
+
+            binRatioStdDev[bin][i] = vectorStdDev(splitBinRatios[bin][i]);
+            binTimesStdDev[bin][i] = vectorStdDev(splitBinTimes[bin][i]);
+        }
+    }
 }
