@@ -78,14 +78,19 @@ const std::vector<double> s(const std::vector<TLorentzVector> &particleA, const 
 }
 
 /*
- * Plot a 100-bin histogram from an array
+ * Plot an n-bin histogram from an array
  */
-void plot_hist(const std::string &title, double *myData, size_t length, const float xmin, const float xmax)
+void plot_hist(const std::string &title,
+               double *           myData,
+               size_t             length,
+               const float        xmin,
+               const float        xmax,
+               const int          nBins)
 {
 
     const char *titleStr = title.c_str();
     auto        kCanvas  = new TCanvas(titleStr, titleStr, 600, 600);
-    TH1D *      hist     = new TH1D(titleStr, titleStr, 100, xmin, xmax);
+    TH1D *      hist     = new TH1D(titleStr, titleStr, nBins, xmin, xmax);
     hist->FillN(length, myData, 0);
     hist->Draw();
 }
@@ -101,7 +106,7 @@ void plot_things(const std::vector<TLorentzVector> &kVectors,
     size_t length = kVectors.size();
 
     // Plot K energies
-    plot_hist("K energies", vector2Array(kVectors, 3), length, 0.45, 1);
+    plot_hist("K energies", vector2Array(kVectors, 3), length, 0.45, 1, 100);
 
     // Plot CoM energies on a new canvas
     auto                      comCanvas = new TCanvas("CoM Energies", "CoM Energies", 600, 600);
@@ -305,4 +310,14 @@ void bin_generated_decays(TFile *inputFile)
     std::vector<std::vector<double>> binTimesAverage(splitBinTimes.size());
     std::vector<std::vector<double>> binRatioStdDev(splitBinRatios.size());
     std::vector<std::vector<double>> binTimesStdDev(splitBinTimes.size());
+
+    // for (size_t i = 0; i < splitBinTimes.size(); ++i) {
+    //    for (size_t j = 0; j < splitBinTimes[i].size(); ++j) {
+    //        binRatioAverage[j].push_back(vectorAvg(splitBinRatios[i][j]));
+    //        binTimesAverage[j].push_back(vectorAvg(splitBinTimes[i][j]));
+
+    //        binRatioStdDev[j].push_back(vectorStdDev(splitBinRatios[i][j]));
+    //        binTimesAverage[j].push_back(vectorStdDev(splitBinTimes[i][j]));
+    //    }
+    //}
 }
