@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "TFile.h"
+#include "TGraphErrors.h"
 #include "TRandom.h"
 #include "TTree.h"
 
@@ -55,8 +56,10 @@ void writeData(TTree &myTree, const std::string &branchName, std::vector<double>
  *
  * The TLorentzVector should be of the form (Px, Py, Pz, E).
  */
-void
-writeDataToLorentzVectors(TTree &myTree, const std::string &branchName, std::vector<TLorentzVector> &myVector, const size_t &index)
+void writeDataToLorentzVectors(TTree &                      myTree,
+                               const std::string &          branchName,
+                               std::vector<TLorentzVector> &myVector,
+                               const size_t &               index)
 {
     double myData{0.0};
 
@@ -235,7 +238,7 @@ void bin_generated_decays(TFile *inputFile)
     }
 
     // Split vectors of ratios and times into subvectors
-    size_t                                        binSize{100};
+    size_t                                        binSize{1000};
     std::vector<std::vector<std::vector<double>>> splitBinRatios = splitVectors(binRatios, binSize);
     std::vector<std::vector<std::vector<double>>> splitBinTimes  = splitVectors(binTimes, binSize);
 
@@ -262,4 +265,13 @@ void bin_generated_decays(TFile *inputFile)
             binTimesStdDev[bin][i] = vectorStdDev(splitBinTimes[bin][i]);
         }
     }
+
+    // Plot a graph of time against ratio in one of the bins to show jonas tomorrow
+    TGraphErrors *plot = new TGraphErrors(binRatioAverage[0].size(),
+                                          binTimesAverage[0].data(),
+                                          binRatioAverage[0].data(),
+                                          binTimesStdDev[0].data(),
+                                          binRatioStdDev[0].data());
+    plot->SetTitle("DCS/CF amplitude ratio; time; ratio");
+    plot->Draw("*ap");
 }
