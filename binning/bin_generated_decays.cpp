@@ -31,12 +31,12 @@
 
 /// Bin limits in phase, centred on zero by construction
 #define NUM_BINS 5
-#define BIN_LIMITS -39, 0, 43, 180 // not sure what to set these to
+#define BIN_LIMITS -39, 0, 43, 180
 
 /*
- * Write the data on branchName to each TLorentzVector in myVector.
+ * Write the data on branchName to myVector.
  */
-void writeData(TTree &myTree, const std::string &branchName, std::vector<double> &myVector)
+void saveBranchToVector(TTree &myTree, const std::string &branchName, std::vector<double> &myVector)
 {
     double myData{0.0};
 
@@ -52,14 +52,14 @@ void writeData(TTree &myTree, const std::string &branchName, std::vector<double>
 
 /*
  * Write the data on branchName to the index'th position of each TLorentzVector in myVector.
- * e.g. to write x-momenta of a particle described by ROOT branch foo_Px, call writeData("foo_Px", myVector, 0)
+ * e.g. to write x-momenta of a particle described by ROOT branch foo_Px, call saveBranchToVector("foo_Px", myVector, 0)
  *
  * The TLorentzVector should be of the form (Px, Py, Pz, E).
  */
-void writeDataToLorentzVectors(TTree &                      myTree,
-                               const std::string &          branchName,
-                               std::vector<TLorentzVector> &myVector,
-                               const size_t &               index)
+void writeBranchToLorentzVectors(TTree &                      myTree,
+                                 const std::string &          branchName,
+                                 std::vector<TLorentzVector> &myVector,
+                                 const size_t &               index)
 {
     double myData{0.0};
 
@@ -80,10 +80,10 @@ std::vector<TLorentzVector> writeVector(TTree &myTree, const std::string &partic
 {
     std::vector<TLorentzVector> myVector = std::vector<TLorentzVector>(myTree.GetEntries());
 
-    writeDataToLorentzVectors(myTree, particleName + "_Px", myVector, 0);
-    writeDataToLorentzVectors(myTree, particleName + "_Py", myVector, 1);
-    writeDataToLorentzVectors(myTree, particleName + "_Pz", myVector, 2);
-    writeDataToLorentzVectors(myTree, particleName + "_E", myVector, 3);
+    writeBranchToLorentzVectors(myTree, particleName + "_Px", myVector, 0);
+    writeBranchToLorentzVectors(myTree, particleName + "_Py", myVector, 1);
+    writeBranchToLorentzVectors(myTree, particleName + "_Pz", myVector, 2);
+    writeBranchToLorentzVectors(myTree, particleName + "_E", myVector, 3);
 
     return myVector;
 }
@@ -150,7 +150,7 @@ double vectorStdDev(const std::vector<double> &vector)
  * pair.
  *
  */
-void sortVectorOfPairs(std::vector<std::vector<std::pair<double, double>>> &myVector)
+void sortVectorsOfPairs(std::vector<std::vector<std::pair<double, double>>> &myVector)
 {
     // Sort each vector based on time
     for (size_t i = 0; i < myVector.size(); ++i) {
@@ -165,9 +165,10 @@ void sortVectorOfPairs(std::vector<std::vector<std::pair<double, double>>> &myVe
  */
 void bin_generated_decays(TFile *inputFile)
 {
-    // ---- Parameters
-    // Scaling and rotation to the DCS amplitude such that we get dcs/cf amplitude ratio 'r' = 0.055
-    // and the average relative strong-phase between the two amplitudes ~ 0.
+    // Scaling and rotation of the DCS amplitude such that we get a small dcs/cf amplitude ratio strong phase.
+    //
+    // Ideally these should be 0.055 and 0 respectively, though at the moment there's no reason to believe that the
+    // current values of DCS_MAGNITUDE and DCS_PHASE will do this for any AmpGen generated dataset.
     const std::complex<double> dcs_offset = DCS_MAGNITUDE * exp(std::complex<double>(0, 1) * DCS_PHASE * M_PI / 180.);
 
     // Define the bins based on the form of the DCS and CF decays
@@ -175,12 +176,11 @@ void bin_generated_decays(TFile *inputFile)
     const std::string     cfFile{"binning/cf.so"};
     k3pi_binning::binning bins(dcsFile, cfFile, dcs_offset, {BIN_LIMITS});
 
-    // ---- Calculations
     // Read in the tree and branches from the provided ROOT file
     // The tree of interest is DalitzEventList as this contains the decay products' kinematic data
     TTree *myTree = nullptr;
     inputFile->GetObject("DalitzEventList", myTree);
-    long long length{myTree->GetEntries()};
+    long long numGeneratedEvents{myTree->GetEntries()};
 
     // Read in vectors of particle data from the ROOT file
     const std::vector<TLorentzVector> kVectors   = writeVector(*myTree, "_1_K~");
@@ -189,17 +189,17 @@ void bin_generated_decays(TFile *inputFile)
     const std::vector<TLorentzVector> pi3Vectors = writeVector(*myTree, "_4_pi~");
 
     // Read the time data from the ROOT file into a vector
-    std::vector<double> times(length, -1);
-    writeData(*myTree, "D_decayTime", times);
+    std::vector<double> times(numGeneratedEvents, -1);
+    saveBranchToVector(*myTree, "D_decayTime", times);
 
-    // Create a vector of pairs of event ratio/time for each bin
+    // Create a vector of pairs of event ratio;time for each bin
     // Store these in a vector for convenience
     std::vector<std::vector<std::pair<double, double>>> binData(NUM_BINS, std::vector<std::pair<double, double>>());
 
     // Make some plots to check that the data from ROOT has been read in correctly
-    plot_things(kVectors, pi1Vectors, pi2Vectors);
+    // plot_things(kVectors, pi1Vectors, pi2Vectors);
 
-    for (int i = 0; i < length; ++i) {
+    for (int i = 0; i < numGeneratedEvents; ++i) {
         // Create a vector of TLorentzVectors for this event (K+, pi-, pi-, pi+)
         std::vector<TLorentzVector> eventVector{kVectors[i], pi1Vectors[i], pi2Vectors[i], pi3Vectors[i]};
         auto                        event = k3pi_binning::eventFromVectors(eventVector);
@@ -217,7 +217,7 @@ void bin_generated_decays(TFile *inputFile)
         binData[bin].push_back(std::make_pair(dcsCfRatio, times[i]));
     }
 
-    // Find the number of points in each bin
+    // Find the number of points in each bin and output to console
     std::vector<size_t> binSizes(NUM_BINS);
     for (size_t bin = 0; bin < NUM_BINS; ++bin) {
         binSizes[bin] = binData[bin].size();
@@ -225,20 +225,21 @@ void bin_generated_decays(TFile *inputFile)
     }
 
     // Sort the data in each bin in increasing time order
-    sortVectorOfPairs(binData);
+    sortVectorsOfPairs(binData);
 
-    // Create two vectors for each bin holding ratio and time data
+    // For each bin, create vectors holding ratio and time data
     std::vector<std::vector<double>> binRatios(NUM_BINS);
     std::vector<std::vector<double>> binTimes(NUM_BINS);
     for (size_t i = 0; i < NUM_BINS; ++i) {
-        for (size_t j = 0; j < binData[i].size(); ++j) {
+        for (size_t j = 0; j < binSizes[i]; ++j) {
+            // Dynamic resizing again... we could avoid this using the above number of points per bin but nah
             binRatios[i].push_back(binData[i][j].first);
             binTimes[i].push_back(binData[i][j].second);
         }
     }
 
     // Split vectors of ratios and times into subvectors
-    size_t                                        binSize{10};
+    size_t                                        binSize{1};
     std::vector<std::vector<std::vector<double>>> splitBinRatios = splitVectors(binRatios, binSize);
     std::vector<std::vector<std::vector<double>>> splitBinTimes  = splitVectors(binTimes, binSize);
 

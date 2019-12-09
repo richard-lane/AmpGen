@@ -85,9 +85,9 @@ void testVectorStdDev(void)
 /*
  * Test sorting a vector of vectors of pairs
  */
-void testSortVectorofVectorofPairs(void)
+void testSortVectorOfVectorOfPairs(void)
 {
-    std::string testName = "testSortVectorofVectorofPairs";
+    std::string testName = "testSortVectorOfVectorofPairs";
 
     std::vector<std::vector<std::pair<double, double>>> vectors{
         {std::make_pair(1, 5), std::make_pair(3, 3), std::make_pair(2, 4), std::make_pair(5, 1), std::make_pair(4, 2)},
@@ -98,7 +98,7 @@ void testSortVectorofVectorofPairs(void)
         {std::make_pair(10, 20), std::make_pair(5, 25), std::make_pair(10, 30)}};
 
     std::vector<std::vector<std::pair<double, double>>> sortedVectors(vectors);
-    sortVectorOfPairs(sortedVectors);
+    sortVectorsOfPairs(sortedVectors);
 
     check(sortedVectors == expectedSortedVectors, testName);
 }
@@ -107,7 +107,7 @@ void test_bin_generated_decays(void)
 {
     // List your functions to test here
     std::vector<std::function<void()>> testCases{
-        &testSplitVectors, &testVectorAvg, &testVectorStdDev, &testSortVectorofVectorofPairs};
+        &testSplitVectors, &testVectorAvg, &testVectorStdDev, &testSortVectorOfVectorOfPairs};
 
     for (auto fcn = testCases.begin(); fcn != testCases.end(); ++fcn) {
         try {
