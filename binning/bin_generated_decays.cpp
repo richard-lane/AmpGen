@@ -160,6 +160,43 @@ void sortVectorsOfPairs(std::vector<std::vector<std::pair<double, double>>> &myV
 }
 
 /*
+ * In each phase-space bin, bin the data by time into bins containing an equal number (binSize) of points.
+ *
+ * binRatioAverage etc. are out args that are modified by this function
+ *
+ */
+void binDataEqualSizes(std::vector<std::vector<double>> &binRatioAverage,
+                       std::vector<std::vector<double>> &binTimesAverage,
+                       std::vector<std::vector<double>> &binRatioStdDev,
+                       std::vector<std::vector<double>> &binTimesStdDev,
+                       std::vector<std::vector<double>> &binRatios,
+                       std::vector<std::vector<double>> &binTimes,
+                       size_t                            binSize)
+{
+    // Split vectors of ratios and times into subvectors
+    std::vector<std::vector<std::vector<double>>> splitBinRatios = splitVectors(binRatios, binSize);
+    std::vector<std::vector<std::vector<double>>> splitBinTimes  = splitVectors(binTimes, binSize);
+
+    // Create vectors of the right length to hold the average and std devs for each bin
+    for (size_t bin = 0; bin < splitBinTimes.size(); ++bin) {
+        binRatioAverage[bin] = std::vector<double>(splitBinRatios[bin].size());
+        binTimesAverage[bin] = std::vector<double>(splitBinRatios[bin].size());
+        binRatioStdDev[bin]  = std::vector<double>(splitBinRatios[bin].size());
+        binTimesStdDev[bin]  = std::vector<double>(splitBinRatios[bin].size());
+    }
+
+    for (size_t bin = 0; bin < NUM_BINS; ++bin) {
+        for (size_t i = 0; i < splitBinTimes[bin].size(); ++i) {
+            binRatioAverage[bin][i] = vectorAvg(splitBinRatios[bin][i]);
+            binTimesAverage[bin][i] = vectorAvg(splitBinTimes[bin][i]);
+
+            binRatioStdDev[bin][i] = vectorStdDev(splitBinRatios[bin][i]);
+            binTimesStdDev[bin][i] = vectorStdDev(splitBinTimes[bin][i]);
+        }
+    }
+}
+
+/*
  * Bin the decays modelled in an AmpGen generated inputFile into phase bins as defined by $BIN_LIMITS
  *
  */
@@ -239,34 +276,14 @@ void bin_generated_decays(TFile *inputFile)
         }
     }
 
-    // Split vectors of ratios and times into subvectors
-    size_t                                        binSize{1};
-    std::vector<std::vector<std::vector<double>>> splitBinRatios = splitVectors(binRatios, binSize);
-    std::vector<std::vector<std::vector<double>>> splitBinTimes  = splitVectors(binTimes, binSize);
-
     // Find average and std dev of ratios and times in each subvector
     std::vector<std::vector<double>> binRatioAverage(NUM_BINS);
     std::vector<std::vector<double>> binTimesAverage(NUM_BINS);
     std::vector<std::vector<double>> binRatioStdDev(NUM_BINS);
     std::vector<std::vector<double>> binTimesStdDev(NUM_BINS);
 
-    // Create vectors of the right length to hold the average and std devs for each bin
-    for (size_t bin = 0; bin < splitBinTimes.size(); ++bin) {
-        binRatioAverage[bin] = std::vector<double>(splitBinRatios[bin].size());
-        binTimesAverage[bin] = std::vector<double>(splitBinRatios[bin].size());
-        binRatioStdDev[bin]  = std::vector<double>(splitBinRatios[bin].size());
-        binTimesStdDev[bin]  = std::vector<double>(splitBinRatios[bin].size());
-    }
-
-    for (size_t bin = 0; bin < NUM_BINS; ++bin) {
-        for (size_t i = 0; i < splitBinTimes[bin].size(); ++i) {
-            binRatioAverage[bin][i] = vectorAvg(splitBinRatios[bin][i]);
-            binTimesAverage[bin][i] = vectorAvg(splitBinTimes[bin][i]);
-
-            binRatioStdDev[bin][i] = vectorStdDev(splitBinRatios[bin][i]);
-            binTimesStdDev[bin][i] = vectorStdDev(splitBinTimes[bin][i]);
-        }
-    }
+    // Bin the data into time bins of equal sizes
+    binDataEqualSizes(binRatioAverage, binTimesAverage, binRatioStdDev, binTimesStdDev, binRatios, binTimes, 10);
 
     // Plot a graph of time against ratio in one of the bins to show jonas tomorrow
     TGraphErrors *plot = new TGraphErrors(binRatioAverage[0].size(),
