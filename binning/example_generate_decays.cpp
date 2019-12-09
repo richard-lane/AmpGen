@@ -1,14 +1,16 @@
 /*
- * Small macro to test that the k3pibinning phase space gives the right value of R when using my bin_generated_decays.cpp thing
- * 
+ * Small macro to test that the k3pibinning phase space gives the right value of R when using my
+ * bin_generated_decays.cpp thing
+ *
  * As of 14/11/19, it does
- * 
+ *
  */
 #include <cmath>
 #include <complex>
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include <random>
 #include <string>
 #include <vector>
 
@@ -28,6 +30,7 @@
 #define PION_MASS 0.13957018
 
 #define PARTICLE_MOMENTUM 0, 0, 0, 1.86962 // Decaying particle momentum in GeV
+#define PARTICLE_LIFETIME 0.000425
 
 /*
  * From a vector of TLorentzVectors, return a vector of a particle's properties
@@ -61,9 +64,17 @@ void example_generate_decays()
     phsp.SetDecay(dMomentum, NUMBER_PRODUCTS, daughterMasses.data());
 
     // ---- Create decays using the k3pi scheme
+    // Also create a random device for exponentially generated times
     std::vector<std::vector<TLorentzVector>> eventVectors = std::vector<std::vector<TLorentzVector>>(NUM_EVENTS);
+    std::vector<double>                      timeVector   = std::vector<double>(NUM_EVENTS);
+
+    std::random_device              rd;
+    std::exponential_distribution<> rng(1 / PARTICLE_LIFETIME);
+    std::mt19937                    rnd_gen(rd());
+
     for (size_t i = 0; i < NUM_EVENTS; ++i) {
         eventVectors[i] = k3pi_binning::makeUnweighted(phsp);
+        timeVector[i]   = rng(rnd_gen);
     }
 
     // Create vectors of K and pi data
@@ -88,25 +99,25 @@ void example_generate_decays()
     std::vector<double> pi3Pz = findParticleData(3, 2, eventVectors);
 
     // For some reason this is what im choosing to do here
-    double kEArray[1000];
-    double kPxArray[1000];
-    double kPyArray[1000];
-    double kPzArray[1000];
+    double kEArray[NUM_EVENTS];
+    double kPxArray[NUM_EVENTS];
+    double kPyArray[NUM_EVENTS];
+    double kPzArray[NUM_EVENTS];
 
-    double pi1EArray[1000];
-    double pi1PxArray[1000];
-    double pi1PyArray[1000];
-    double pi1PzArray[1000];
+    double pi1EArray[NUM_EVENTS];
+    double pi1PxArray[NUM_EVENTS];
+    double pi1PyArray[NUM_EVENTS];
+    double pi1PzArray[NUM_EVENTS];
 
-    double pi2EArray[1000];
-    double pi2PxArray[1000];
-    double pi2PyArray[1000];
-    double pi2PzArray[1000];
+    double pi2EArray[NUM_EVENTS];
+    double pi2PxArray[NUM_EVENTS];
+    double pi2PyArray[NUM_EVENTS];
+    double pi2PzArray[NUM_EVENTS];
 
-    double pi3EArray[1000];
-    double pi3PxArray[1000];
-    double pi3PyArray[1000];
-    double pi3PzArray[1000];
+    double pi3EArray[NUM_EVENTS];
+    double pi3PxArray[NUM_EVENTS];
+    double pi3PyArray[NUM_EVENTS];
+    double pi3PzArray[NUM_EVENTS];
 
     // ---- Write them to a root file
     // This file must be initialised before the tree is created so that ROOT knows which file to write the tree to
@@ -154,10 +165,11 @@ void example_generate_decays()
         myTree->Branch("_4_pi~_Pz", &pi3Pzi, "pi3Pzi/D", bufsize);
         myTree->Branch("_4_pi~_E", &pi3Ei, "pi3Ei/D", bufsize);
 
+        double timei = timeVector[i];
+        myTree->Branch("D_decayTime", &timei, "timei/D", bufsize);
+
         myTree->Fill();
     }
-
-    //     Write the data to branches on the tree called the right things
 
     outFile.Write();
     outFile.Close();
