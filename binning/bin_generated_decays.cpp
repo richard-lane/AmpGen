@@ -169,6 +169,7 @@ void bin_generated_decays(TFile *inputFile)
     //
     // Ideally these should be 0.055 and 0 respectively, though at the moment there's no reason to believe that the
     // current values of DCS_MAGNITUDE and DCS_PHASE will do this for any AmpGen generated dataset.
+    // NB: I don't actually think this value affects the DCS/CF ratio vs time plots
     const std::complex<double> dcs_offset = DCS_MAGNITUDE * exp(std::complex<double>(0, 1) * DCS_PHASE * M_PI / 180.);
 
     // Define the bins based on the form of the DCS and CF decays
