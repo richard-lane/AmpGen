@@ -33,45 +33,6 @@
 #define NUM_BINS 5
 #define BIN_LIMITS -39, 0, 43, 180
 
-/*
- * In each phase-space bin, bin the data by time into bins containing an equal number (binSize) of points.
- *
- * binRatioAverage etc. are out args that are modified by this function
- *
- * binRatios and binTimes should be sorted in order of increasing time
- *
- */
-void binDataEqualSizeBins(std::vector<std::vector<double>> &binRatioAverage,
-                          std::vector<std::vector<double>> &binTimesAverage,
-                          std::vector<std::vector<double>> &binRatioStdDev,
-                          std::vector<std::vector<double>> &binTimesStdDev,
-                          std::vector<std::vector<double>> &binRatios,
-                          std::vector<std::vector<double>> &binTimes,
-                          size_t                            binSize)
-{
-    // Split vectors of ratios and times into subvectors
-    std::vector<std::vector<std::vector<double>>> splitBinRatios = splitVectorsEqualChunks(binRatios, binSize);
-    std::vector<std::vector<std::vector<double>>> splitBinTimes  = splitVectorsEqualChunks(binTimes, binSize);
-
-    // Create vectors of the right length to hold the average and std devs for each bin
-    for (size_t bin = 0; bin < splitBinTimes.size(); ++bin) {
-        // TODO stop calling .size() so much
-        binRatioAverage[bin] = std::vector<double>(splitBinRatios[bin].size());
-        binTimesAverage[bin] = std::vector<double>(splitBinRatios[bin].size());
-        binRatioStdDev[bin]  = std::vector<double>(splitBinRatios[bin].size());
-        binTimesStdDev[bin]  = std::vector<double>(splitBinRatios[bin].size());
-    }
-
-    for (size_t bin = 0; bin < NUM_BINS; ++bin) {
-        for (size_t i = 0; i < splitBinTimes[bin].size(); ++i) {
-            binRatioAverage[bin][i] = vectorAvg(splitBinRatios[bin][i]);
-            binTimesAverage[bin][i] = vectorAvg(splitBinTimes[bin][i]);
-
-            binRatioStdDev[bin][i] = vectorStdDev(splitBinRatios[bin][i]);
-            binTimesStdDev[bin][i] = vectorStdDev(splitBinTimes[bin][i]);
-        }
-    }
-}
 
 /*
  * In each phase-space bin, bin the data by time into bins defined by timeBinLimits
@@ -206,9 +167,6 @@ void bin_generated_decays(TFile *inputFile)
     std::vector<std::vector<double>> binTimesAverage(NUM_BINS);
     std::vector<std::vector<double>> binRatioStdDev(NUM_BINS);
     std::vector<std::vector<double>> binTimesStdDev(NUM_BINS);
-
-    // Bin the data into time bins of equal sizes
-    // binDataEqualSizeBins(binRatioAverage, binTimesAverage, binRatioStdDev, binTimesStdDev, binRatios, binTimes, 10);
 
     // Bin data into time bins defined by a vector
     std::vector<double> timeBinLimits{};
