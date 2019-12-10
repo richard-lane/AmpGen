@@ -16,7 +16,7 @@
 #include <vector>
 
 #include "TFile.h"
-#include "TGraphErrors.h"
+#include "TH1D.h"
 #include "TRandom.h"
 
 #include "binning_helpers.cpp"
@@ -149,17 +149,26 @@ void bin_generated_decays(TFile *inputFile)
     // Sort the data in each bin in increasing time order
     sortVectorsOfPairs(binData);
 
-    // Find average and std dev of ratios and times in each subvector
-    // These are passed to the binning functions below as OUT args
-    std::vector<std::vector<double>> binRatioAverage(NUM_BINS);
-    std::vector<std::vector<double>> binTimesAverage(NUM_BINS);
-    std::vector<std::vector<double>> binRatioStdDev(NUM_BINS);
-    std::vector<std::vector<double>> binTimesStdDev(NUM_BINS);
-
     // Bin data into time bins defined by a vector
     std::vector<double> timeBinLimits{};
-    for (double i = 1; i < 300; ++i) {
+    for (double i = 0; i < 300; ++i) {
         timeBinLimits.push_back(i / 100000);
     }
-    std::vector<std::vector<std::vector<std::pair<double, double>>>> timeBinnedData = splitVectorsWithLimits(binData, timeBinLimits);
+    std::vector<std::vector<std::vector<std::pair<double, double>>>> timeBinnedData =
+        splitVectorsWithLimits(binData, timeBinLimits);
+
+    // Find how many points there are in each time bin
+    std::vector<std::vector<size_t>> numPointsPerTimeBin(NUM_BINS);
+
+    for (size_t bin = 0; bin < NUM_BINS; ++bin) {
+        for (size_t i = 0; i < timeBinnedData[bin].size(); ++i) {
+            numPointsPerTimeBin[bin].push_back(timeBinnedData[bin][i].size());
+        }
+    }
+
+    TH1D *MyHist = new TH1D("foo", "foo", timeBinLimits.size() - 1, timeBinLimits.data());
+    for (size_t i = 0; i < timeBinLimits.size() - 1; ++i) {
+        MyHist->SetBinContent(i, numPointsPerTimeBin[bin][i]);
+    }
+    MyHist->Draw();
 }
