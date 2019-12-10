@@ -33,7 +33,6 @@
 #define NUM_BINS 5
 #define BIN_LIMITS -39, 0, 43, 180
 
-
 /*
  * In each phase-space bin, bin the data by time into bins defined by timeBinLimits
  *
@@ -149,17 +148,6 @@ void bin_generated_decays(TFile *inputFile)
 
     // Sort the data in each bin in increasing time order
     sortVectorsOfPairs(binData);
-
-    // For each bin, create vectors holding ratio and time data
-    std::vector<std::vector<double>> binRatios(NUM_BINS);
-    std::vector<std::vector<double>> binTimes(NUM_BINS);
-    for (size_t i = 0; i < NUM_BINS; ++i) {
-        for (size_t j = 0; j < binSizes[i]; ++j) {
-            // Dynamic resizing again... we could avoid this using the above number of points per bin but nah
-            binRatios[i].push_back(binData[i][j].first);
-            binTimes[i].push_back(binData[i][j].second);
-        }
-    }
 
     // Find average and std dev of ratios and times in each subvector
     // These are passed to the binning functions below as OUT args
