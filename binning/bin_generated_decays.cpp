@@ -95,7 +95,7 @@ std::vector<TLorentzVector> writeVector(TTree &myTree, const std::string &partic
  * elements
  */
 std::vector<std::vector<std::vector<double>>> splitVectorsEqualChunks(const std::vector<std::vector<double>> &myVector,
-                                                           size_t                                  chunkSize)
+                                                                      size_t                                  chunkSize)
 {
     size_t                                        N{myVector.size()};
     std::vector<std::vector<std::vector<double>>> outVectors(N);
@@ -124,6 +124,44 @@ std::vector<std::vector<std::vector<double>>> splitVectorsEqualChunks(const std:
 }
 
 /*
+ * Given a vector of vectors of pairs, split it into a vector of vectors of vectors of pairs.
+ * Each vector is split based on the second element in the pair according to binLimits.
+ *
+ * Each subvector should be sorted in order of increasing second pair element.
+ */
+std::vector<std::vector<std::vector<std::pair<double, double>>>>
+splitVectorsWithLimits(const std::vector<std::vector<std::pair<double, double>>> &myVectors,
+                       std::vector<double>                                        binLimits)
+{
+    // Bin limits should be sorted
+    if (!std::is_sorted(binLimits.begin(), binLimits.end())) {
+        std::cout << "Bad time bin limits; should be sorted" << std::endl;
+        throw;
+    }
+
+    // Bins for values up to binLimits[0], values between two limits and values >binLimits[N]
+    size_t numBins = binLimits.size() + 1;
+
+    // Create our vector of vectors of vectors of pairs
+    std::vector<std::vector<std::vector<std::pair<double, double>>>> splitVectors(
+        NUM_BINS, std::vector<std::vector<std::pair<double, double>>>(numBins));
+
+    // In each bin, fill in our vector of vectors according to the bin limits
+    for (size_t bin = 0; bin < NUM_BINS; ++bin) {
+        size_t currentTimeBin = 0;
+        for (size_t i = 0; i < myVectors[bin].size(); ++i) {
+            // If this time is more than the bin limit, we want to put subsequent points in a higher bin
+            // Unless we are already putting points in the highest bin
+            while (myVectors[bin][i].second > binLimits[currentTimeBin] && currentTimeBin < numBins - 1) {
+                currentTimeBin += 1;
+            }
+            splitVectors[bin][currentTimeBin].push_back(myVectors[bin][i]);
+        }
+    }
+    return splitVectors;
+}
+
+/*
  * Find average of vector
  */
 double vectorAvg(const std::vector<double> &vector)
@@ -133,7 +171,6 @@ double vectorAvg(const std::vector<double> &vector)
 
 /*
  * Find std dev of a vector
- * Could improve implementation so that the avg is passed into this fcn but i dont want to do that
  */
 double vectorStdDev(const std::vector<double> &vector)
 {
@@ -202,6 +239,27 @@ void binDataEqualSizeBins(std::vector<std::vector<double>> &binRatioAverage,
 }
 
 /*
+ * Convert a vector of pairs to two vectors
+ *
+ */
+void vectorOfPairs2vectors(std::vector<double> &                   firstOutVector,
+                           std::vector<double> &                   secondOutVector,
+                           std::vector<std::pair<double, double>> &vectorOfPairs)
+{
+    // Check that our two out args are empty vectors
+    if (!firstOutVector.empty() || !secondOutVector.empty()) {
+        std::cout << "Bad out args passed to vectorOfPairs2vectors" << std::endl;
+        throw;
+    }
+
+    size_t numPairs = vectorOfPairs.size();
+    for (size_t i = 0; i < numPairs; ++i) {
+        firstOutVector.push_back(vectorOfPairs[i].first);
+        secondOutVector.push_back(vectorOfPairs[i].second);
+    }
+}
+
+/*
  * In each phase-space bin, bin the data by time into bins defined by timeBinLimits
  *
  * binRatioAverage etc. are out args that are modified by this function
@@ -209,25 +267,15 @@ void binDataEqualSizeBins(std::vector<std::vector<double>> &binRatioAverage,
  * binRatios and binTimes should be sorted in order of increasing time
  *
  */
-void binDataTimeBinLimits(std::vector<std::vector<double>> &binRatioAverage,
-                          std::vector<std::vector<double>> &binTimesAverage,
-                          std::vector<std::vector<double>> &binRatioStdDev,
-                          std::vector<std::vector<double>> &binTimesStdDev,
-                          std::vector<std::vector<double>> &binRatios,
-                          std::vector<std::vector<double>> &binTimes,
-                          std::vector<double> &             timeBinLimits)
+void binDataTimeBinLimits(std::vector<std::vector<double>> &                   binRatioAverage,
+                          std::vector<std::vector<double>> &                   binTimesAverage,
+                          std::vector<std::vector<double>> &                   binRatioStdDev,
+                          std::vector<std::vector<double>> &                   binTimesStdDev,
+                          std::vector<std::vector<std::pair<double, double>>> &binData,
+                          std::vector<double> &                                timeBinLimits)
 {
-    // Add a unit test for the logic fcn
-    // Check that bin limits are sorted and positive
-    if (!std::is_sorted(timeBinLimits.begin(), timeBinLimits.end()) || timeBinLimits[0] < 0) {
-        std::cout << "Bad time bin limits" << std::endl;
-        throw;
-    }
-
-    // Bins for values up to the timeBinLimits[0], values between two limits and values >timeBinLimits[N]
     size_t numTimeBins = timeBinLimits.size() + 1;
 
-    // initialise out args to vectors of vectors of the right length
     // Create vectors of the right length to hold the average and std devs for each bin
     for (size_t bin = 0; bin < NUM_BINS; ++bin) {
         binRatioAverage[bin] = std::vector<double>(numTimeBins, -1);
@@ -236,34 +284,22 @@ void binDataTimeBinLimits(std::vector<std::vector<double>> &binRatioAverage,
         binTimesStdDev[bin]  = std::vector<double>(numTimeBins, -1);
     }
 
-    // Create a vector of NUM_BINS vectors of numTimeBins vectors
-    std::vector<std::vector<std::vector<double>>> splitBinRatios(NUM_BINS,
-                                                                 std::vector<std::vector<double>>(numTimeBins));
-    std::vector<std::vector<std::vector<double>>> splitBinTimes(NUM_BINS,
-                                                                std::vector<std::vector<double>>(numTimeBins));
-
-    // In each bin, fill in our vector of vectors according to the bin limits
-    size_t currentTimeBin = 0;
-    for (size_t bin = 0; bin < NUM_BINS; ++bin) {
-        for (size_t i = 0; i < binTimes[bin].size(); ++i) {
-            // If this time is more than the bin limit, we want to put subsequent points in a higher bin
-            // Unless we are already putting points in the highest bin
-            while (binTimes[bin][i] > timeBinLimits[currentTimeBin] && currentTimeBin < numTimeBins - 1) {
-                currentTimeBin += 1;
-            }
-            splitBinRatios[bin][currentTimeBin].push_back(binRatios[bin][i]);
-            splitBinTimes[bin][currentTimeBin].push_back(binTimes[bin][i]);
-        }
-        currentTimeBin = 0;
-    }
+    // Split our vectors of pairs into vectors of vectors of pairs based on the bin limits
+    std::vector<std::vector<std::vector<std::pair<double, double>>>> splitBinData =
+        splitVectorsWithLimits(binData, timeBinLimits);
 
     for (size_t bin = 0; bin < NUM_BINS; ++bin) {
         for (size_t i = 0; i < numTimeBins; ++i) {
-            binRatioAverage[bin][i] = vectorAvg(splitBinRatios[bin][i]);
-            binTimesAverage[bin][i] = vectorAvg(splitBinTimes[bin][i]);
+            // Create vectors for time and ratio in this phase space and time bin
+            std::vector<double> ratios;
+            std::vector<double> times;
+            vectorOfPairs2vectors(ratios, times, splitBinData[bin][i]);
 
-            binRatioStdDev[bin][i] = vectorStdDev(splitBinRatios[bin][i]);
-            binTimesStdDev[bin][i] = vectorStdDev(splitBinTimes[bin][i]);
+            binRatioAverage[bin][i] = vectorAvg(ratios);
+            binTimesAverage[bin][i] = vectorAvg(times);
+
+            binRatioStdDev[bin][i] = vectorStdDev(ratios);
+            binTimesStdDev[bin][i] = vectorStdDev(times);
         }
     }
 }
@@ -359,12 +395,11 @@ void bin_generated_decays(TFile *inputFile)
 
     // Bin data into time bins defined by a vector
     std::vector<double> timeBinLimits{};
-    for (double i = 1; i < 30; ++i) {
-        timeBinLimits.push_back(i / 10000);
+    for (double i = 1; i < 300; ++i) {
+        timeBinLimits.push_back(i / 100000);
     }
 
-    binDataTimeBinLimits(
-        binRatioAverage, binTimesAverage, binRatioStdDev, binTimesStdDev, binRatios, binTimes, timeBinLimits);
+    binDataTimeBinLimits(binRatioAverage, binTimesAverage, binRatioStdDev, binTimesStdDev, binData, timeBinLimits);
 
     // Plot a graph of time against ratio in one of the bins to show jonas tomorrow
     TGraphErrors *plot = new TGraphErrors(binRatioAverage[0].size(),
