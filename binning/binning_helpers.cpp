@@ -66,6 +66,40 @@ std::vector<std::vector<std::vector<double>>> splitVectorsEqualChunks(const std:
 }
 
 /*
+ * Split a vector based on binLimits
+ */
+std::vector<std::vector<double>> splitVectorWithLimits(std::vector<double> &myVector, std::vector<double> binLimits)
+{
+    // Bin limits should be sorted
+    if (!std::is_sorted(binLimits.begin(), binLimits.end())) {
+        std::cout << "Bad time bin limits; should be sorted" << std::endl;
+        throw;
+    }
+
+    // Vector should be sorted
+    if (!std::is_sorted(myVector.begin(), myVector.end())) {
+        std::cout << "Vector must be sorted in order to split" << std::endl;
+        throw;
+    }
+
+    // TODO create a consistent definition of what numbins are
+    size_t                           numBins = binLimits.size() - 1;
+    std::vector<std::vector<double>> splitVector(numBins);
+
+    size_t currentTimeBin = 0;
+    for (size_t i = 0; i < myVector.size(); ++i) {
+        // If this time is more than the bin limit, we want to put subsequent points in a higher bin
+        // Unless we are already putting points in the highest bin
+        while (myVector[i] > binLimits[currentTimeBin] && currentTimeBin < numBins - 1) {
+            currentTimeBin += 1;
+        }
+        splitVector[currentTimeBin].push_back(myVector[i]);
+    }
+
+    return splitVector;
+}
+
+/*
  * Given a vector of vectors of pairs, split it into a vector of vectors of vectors of pairs.
  * Each vector is split based on the second element in the pair according to binLimits.
  *
@@ -102,6 +136,16 @@ splitVectorsWithLimits(const std::vector<std::vector<std::pair<double, double>>>
         }
     }
     return splitVectors;
+}
+
+/*
+ * Sort a vector of vectors
+ */
+void sortVectorOfVectors(std::vector<std::vector<double>> &myVector)
+{
+    for (size_t i = 0; i < myVector.size(); ++i) {
+        std::sort(myVector[i].begin(), myVector[i].end());
+    }
 }
 
 /*

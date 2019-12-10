@@ -86,17 +86,11 @@ void binDataTimeBinLimits(std::vector<std::vector<double>> &                   b
  */
 void bin_generated_decays(TFile *inputFile)
 {
-    // Scaling and rotation of the DCS amplitude such that we get a small dcs/cf amplitude ratio strong phase.
-    //
-    // Ideally these should be 0.055 and 0 respectively, though at the moment there's no reason to believe that the
-    // current values of DCS_MAGNITUDE and DCS_PHASE will do this for any AmpGen generated dataset.
-    // NB: I don't actually think this value affects the DCS/CF ratio vs time plots
-    const std::complex<double> dcs_offset = DCS_MAGNITUDE * exp(std::complex<double>(0, 1) * DCS_PHASE * M_PI / 180.);
-
     // Define the bins based on the form of the DCS and CF decays
-    const std::string     dcsFile{"binning/dcs.so"};
-    const std::string     cfFile{"binning/cf.so"};
-    k3pi_binning::binning bins(dcsFile, cfFile, dcs_offset, {BIN_LIMITS});
+    const std::string          dcsFile{"binning/dcs.so"};
+    const std::string          cfFile{"binning/cf.so"};
+    const std::complex<double> dcs_offset = DCS_MAGNITUDE * exp(std::complex<double>(0, 1) * DCS_PHASE * M_PI / 180.);
+    k3pi_binning::binning      bins(dcsFile, cfFile, dcs_offset, {BIN_LIMITS});
 
     // Read in the tree and branches from the provided ROOT file
     // The tree of interest is DalitzEventList as this contains the decay products' kinematic data
@@ -114,48 +108,45 @@ void bin_generated_decays(TFile *inputFile)
     std::vector<double> times(numGeneratedEvents, -1);
     saveBranchToVector(*myTree, "D_decayTime", times);
 
-    // Create a vector of pairs of event ratio;time for each bin
-    // Store these in a vector for convenience
-    std::vector<std::vector<std::pair<double, double>>> binData(NUM_BINS, std::vector<std::pair<double, double>>());
-
     // Make some plots to check that the data from ROOT has been read in correctly
     // plot_things(kVectors, pi1Vectors, pi2Vectors);
 
+    // Store the time of each event in a vector
+    std::vector<std::vector<double>> binTimes(NUM_BINS);
     for (int i = 0; i < numGeneratedEvents; ++i) {
         // Create a vector of TLorentzVectors for this event (K+, pi-, pi-, pi+)
         std::vector<TLorentzVector> eventVector{kVectors[i], pi1Vectors[i], pi2Vectors[i], pi3Vectors[i]};
         auto                        event = k3pi_binning::eventFromVectors(eventVector);
 
-        // Work out the CF and DCS amplitudes of this event, using the bins object created above
-        auto eval_cf  = bins.cf(event.data(), 1);
-        auto eval_dcs = dcs_offset * bins.dcs(event.data(), 1);
-
         // Find which bin the event belongs in
+        // The 1 tags the sign of the K meson in the D->K3pi decay
         int bin = bins.bin(eventVector, 1);
 
-        // Log the time and ratio of the event in this bin
+        // Log the time of the event in this bin
         // This might be slow because it's dynamically resizing the vector, but should be ok for our purposes.
-        double dcsCfRatio = abs(eval_dcs / eval_cf);
-        binData[bin].push_back(std::make_pair(dcsCfRatio, times[i]));
+        binTimes[bin].push_back(times[i]);
     }
 
     // Find the number of points in each bin and output to console
     std::vector<size_t> binSizes(NUM_BINS);
     for (size_t bin = 0; bin < NUM_BINS; ++bin) {
-        binSizes[bin] = binData[bin].size();
+        binSizes[bin] = binTimes[bin].size();
         std::cout << "points in bin " << bin << ": " << binSizes[bin] << std::endl;
     }
 
     // Sort the data in each bin in increasing time order
-    sortVectorsOfPairs(binData);
+    sortVectorOfVectors(binTimes);
 
     // Bin data into time bins defined by a vector
     std::vector<double> timeBinLimits{};
     for (double i = 0; i < 300; ++i) {
         timeBinLimits.push_back(i / 100000);
     }
-    std::vector<std::vector<std::vector<std::pair<double, double>>>> timeBinnedData =
-        splitVectorsWithLimits(binData, timeBinLimits);
+
+    std::vector<std::vector<std::vector<double>>> timeBinnedData(NUM_BINS);
+    for (size_t bin = 0; bin < NUM_BINS; ++bin) {
+        timeBinnedData[bin] = splitVectorWithLimits(binTimes[bin], timeBinLimits);
+    }
 
     // Find how many points there are in each time bin
     std::vector<std::vector<size_t>> numPointsPerTimeBin(NUM_BINS);
