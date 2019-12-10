@@ -9,6 +9,29 @@
 #include <vector>
 
 /*
+ * Find average of vector
+ */
+double vectorAvg(const std::vector<double> &vector)
+{
+    return std::accumulate(std::begin(vector), std::end(vector), 0.0) / vector.size();
+}
+
+/*
+ * Find std dev of a vector
+ */
+double vectorStdDev(const std::vector<double> &vector)
+{
+    size_t              size = vector.size();
+    double              mean = vectorAvg(vector);
+    std::vector<double> diff(size);
+
+    std::transform(vector.begin(), vector.end(), diff.begin(), std::bind2nd(std::minus<double>(), mean));
+    double sqSum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
+
+    return std::sqrt(sqSum / size);
+}
+
+/*
  * Split a vector of N vectors into a a vector containing N vectors of vectors, each of which has a maximum of chunkSize
  * elements
  *
@@ -79,29 +102,6 @@ splitVectorsWithLimits(const std::vector<std::vector<std::pair<double, double>>>
         }
     }
     return splitVectors;
-}
-
-/*
- * Find average of vector
- */
-double vectorAvg(const std::vector<double> &vector)
-{
-    return std::accumulate(std::begin(vector), std::end(vector), 0.0) / vector.size();
-}
-
-/*
- * Find std dev of a vector
- */
-double vectorStdDev(const std::vector<double> &vector)
-{
-    size_t              size = vector.size();
-    double              mean = vectorAvg(vector);
-    std::vector<double> diff(size);
-
-    std::transform(vector.begin(), vector.end(), diff.begin(), std::bind2nd(std::minus<double>(), mean));
-    double sqSum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
-
-    return std::sqrt(sqSum / size);
 }
 
 /*

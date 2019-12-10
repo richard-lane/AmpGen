@@ -103,11 +103,38 @@ void testSortVectorOfVectorOfPairs(void)
     check(sortedVectors == expectedSortedVectors, testName);
 }
 
+/*
+ * Test converting a vector of pairs to two vectors
+ */
+void testVectorOfPairs2Vectors(void)
+{
+    std::string testName = "testVectorOfPairs2Vectors";
+
+    std::vector<std::pair<double, double>> pairs{
+        std::make_pair(1, 2), std::make_pair(3, 3), std::make_pair(3, 4), std::make_pair(1, 4)};
+
+    std::vector<double> expectedFirst{1, 3, 3, 1};
+    std::vector<double> expectedSecond{2, 3, 4, 4};
+
+    std::vector<double> first;
+    std::vector<double> second;
+    vectorOfPairs2vectors(first, second, pairs);
+
+    // using == for doubles? that's a paddlin'
+    check(expectedFirst == first && expectedSecond == second, testName);
+}
+
+/*
+ * Run tests
+ */
 void test_bin_generated_decays(void)
 {
     // List your functions to test here
-    std::vector<std::function<void()>> testCases{
-        &testSplitVectorsEqualChunks, &testVectorAvg, &testVectorStdDev, &testSortVectorOfVectorOfPairs};
+    std::vector<std::function<void()>> testCases{&testSplitVectorsEqualChunks,
+                                                 &testVectorAvg,
+                                                 &testVectorStdDev,
+                                                 &testSortVectorOfVectorOfPairs,
+                                                 &testVectorOfPairs2Vectors};
 
     for (auto fcn = testCases.begin(); fcn != testCases.end(); ++fcn) {
         try {
