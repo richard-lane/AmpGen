@@ -125,6 +125,29 @@ void testVectorOfPairs2Vectors(void)
 }
 
 /*
+ * Test Splitting a vector of vectors of pairs into a vector of vectors of vectors of pairs based on bin limits
+ */
+void testSplitVectorsWithLimits(void)
+{
+    std::string testName = "testSplitVectorsWithLimits";
+
+    std::vector<std::vector<std::pair<double, double>>> vectors{
+        {std::make_pair(4, 1), std::make_pair(3, 2), std::make_pair(2, 3), std::make_pair(1, 4)},
+        {std::make_pair(4, 1), std::make_pair(3, 2), std::make_pair(2, 3), std::make_pair(1, 4)}};
+
+    std::vector<double>                                              limits{1.5, 2.5};
+    std::vector<std::vector<std::vector<std::pair<double, double>>>> expectedSplitVectors{
+        {{std::make_pair(4, 1)}, {std::make_pair(3, 2)}, {std::make_pair(2, 3), std::make_pair(1, 4)}},
+        {{std::make_pair(4, 1)}, {std::make_pair(3, 2)}, {std::make_pair(2, 3), std::make_pair(1, 4)}}};
+
+    std::vector<std::vector<std::vector<std::pair<double, double>>>> splitVectors =
+        splitVectorsWithLimits(vectors, limits);
+
+    // that's a paddlin'
+    check(expectedSplitVectors == splitVectors, testName);
+}
+
+/*
  * Run tests
  */
 void test_bin_generated_decays(void)
@@ -134,7 +157,8 @@ void test_bin_generated_decays(void)
                                                  &testVectorAvg,
                                                  &testVectorStdDev,
                                                  &testSortVectorOfVectorOfPairs,
-                                                 &testVectorOfPairs2Vectors};
+                                                 &testVectorOfPairs2Vectors,
+                                                 &testSplitVectorsWithLimits};
 
     for (auto fcn = testCases.begin(); fcn != testCases.end(); ++fcn) {
         try {
