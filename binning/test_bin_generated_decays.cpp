@@ -39,15 +39,15 @@ inline void check(bool condition, std::string testName)
  * element vectors
  *
  */
-void testSplitVectors(void)
+void testSplitVectorsEqualChunks(void)
 {
-    std::string testName = "testSplitVectors";
+    std::string testName = "testSplitVectorsEqualChunks";
 
     std::vector<std::vector<double>> v{{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
                                        {2, 4, 6, 8, 10, 12, 14, 16, 18, 20},
                                        {10, 20, 30, 40, 50, 60, 70, 80, 90, 100}};
 
-    std::vector<std::vector<std::vector<double>>> splitV = splitVectors(v, 4);
+    std::vector<std::vector<std::vector<double>>> splitV = splitVectorsEqualChunks(v, 4);
     std::vector<std::vector<std::vector<double>>> expectedSplitV{{{1, 2, 3, 4}, {5, 6, 7, 8}, {9, 10}},
                                                                  {{2, 4, 6, 8}, {10, 12, 14, 16}, {18, 20}},
                                                                  {{10, 20, 30, 40}, {50, 60, 70, 80}, {90, 100}}};
@@ -107,7 +107,7 @@ void test_bin_generated_decays(void)
 {
     // List your functions to test here
     std::vector<std::function<void()>> testCases{
-        &testSplitVectors, &testVectorAvg, &testVectorStdDev, &testSortVectorOfVectorOfPairs};
+        &testSplitVectorsEqualChunks, &testVectorAvg, &testVectorStdDev, &testSortVectorOfVectorOfPairs};
 
     for (auto fcn = testCases.begin(); fcn != testCases.end(); ++fcn) {
         try {

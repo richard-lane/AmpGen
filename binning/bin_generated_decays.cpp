@@ -94,7 +94,7 @@ std::vector<TLorentzVector> writeVector(TTree &myTree, const std::string &partic
  * Split a vector of N vectors into a a vector containing N vectors of vectors, each of which has a maximum of chunkSize
  * elements
  */
-std::vector<std::vector<std::vector<double>>> splitVectors(const std::vector<std::vector<double>> &myVector,
+std::vector<std::vector<std::vector<double>>> splitVectorsEqualChunks(const std::vector<std::vector<double>> &myVector,
                                                            size_t                                  chunkSize)
 {
     size_t                                        N{myVector.size()};
@@ -178,8 +178,8 @@ void binDataEqualSizeBins(std::vector<std::vector<double>> &binRatioAverage,
                           size_t                            binSize)
 {
     // Split vectors of ratios and times into subvectors
-    std::vector<std::vector<std::vector<double>>> splitBinRatios = splitVectors(binRatios, binSize);
-    std::vector<std::vector<std::vector<double>>> splitBinTimes  = splitVectors(binTimes, binSize);
+    std::vector<std::vector<std::vector<double>>> splitBinRatios = splitVectorsEqualChunks(binRatios, binSize);
+    std::vector<std::vector<std::vector<double>>> splitBinTimes  = splitVectorsEqualChunks(binTimes, binSize);
 
     // Create vectors of the right length to hold the average and std devs for each bin
     for (size_t bin = 0; bin < splitBinTimes.size(); ++bin) {
