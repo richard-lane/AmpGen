@@ -161,14 +161,5 @@ void bin_generated_decays(TFile *inputFile)
     for (double i = 1; i < 300; ++i) {
         timeBinLimits.push_back(i / 100000);
     }
-    binDataTimeBinLimits(binRatioAverage, binTimesAverage, binRatioStdDev, binTimesStdDev, binData, timeBinLimits);
-
-    // Plot a graph of time against ratio in one of the bins to show jonas tomorrow
-    TGraphErrors *plot = new TGraphErrors(binRatioAverage[0].size(),
-                                          binTimesAverage[0].data(),
-                                          binRatioAverage[0].data(),
-                                          binTimesStdDev[0].data(),
-                                          binRatioStdDev[0].data());
-    plot->SetTitle("DCS/CF amplitude ratio; time; ratio");
-    plot->Draw("*ap");
+    std::vector<std::vector<std::vector<std::pair<double, double>>>> timeBinnedData = splitVectorsWithLimits(binData, timeBinLimits);
 }
