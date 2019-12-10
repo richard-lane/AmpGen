@@ -5,7 +5,7 @@
  *
  */
 
-#include "bin_generated_decays.cpp"
+#include "binning_helpers.cpp"
 
 #include <cassert>
 #include <exception>
