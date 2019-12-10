@@ -168,7 +168,7 @@ void bin_generated_decays(TFile *inputFile)
 
     TH1D *MyHist = new TH1D("foo", "foo", timeBinLimits.size() - 1, timeBinLimits.data());
     for (size_t i = 0; i < timeBinLimits.size() - 1; ++i) {
-        MyHist->SetBinContent(i, numPointsPerTimeBin[bin][i]);
+        MyHist->SetBinContent(i, numPointsPerTimeBin[0][i]);
     }
     MyHist->Draw();
 }
