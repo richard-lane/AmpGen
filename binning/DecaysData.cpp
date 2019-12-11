@@ -5,6 +5,7 @@
 #include "binning_helpers.cpp"
 
 #include "TFile.h"
+#include "k3pi_binning.h"
 
 /*
  * All the information we need to extract is in the ROOT file on a given Tree, so this is all the constructor needs.
@@ -15,7 +16,6 @@ DecaysData::DecaysData(TFile *myTFile, std::string treeName)
     myTFile->GetObject(treeName.c_str(), myTree);
     numEvents = myTree->GetEntries();
 }
-
 
 /*
  * Write the data on branchName to the index'th position of each TLorentzVector in myVector.
@@ -89,6 +89,32 @@ void D2K3PiData::populate(std::string timesBranchName)
     pi2Vectors = particleData("_3_pi#");
     pi3Vectors = particleData("_4_pi~");
     setDecayTimes(timesBranchName);
+}
+
+/*
+ * Sort the events into bins based on $BIN_LIMITS
+ *
+ * Sets the binnedTimes vector of vectors
+ */
+void D2K3PiData::binTimes(void)
+{
+    // Define our bins
+    k3pi_binning::binning bins(dcsFile, cfFile, dcs_offset, {BIN_LIMITS});
+
+    // Iterate over all events, sorting them into bins
+    for (size_t i = 0; i < numEvents; ++i) {
+        // Create a vector of TLorentzVectors for this event (K+, pi-, pi-, pi+)
+        std::vector<TLorentzVector> eventVector{kVectors[i], pi1Vectors[i], pi2Vectors[i], pi3Vectors[i]};
+        auto                        event = k3pi_binning::eventFromVectors(eventVector);
+
+        // Find which bin the event belongs in
+        // The 1 tags the sign of the K meson in the D->K3pi decay
+        int bin = bins.bin(eventVector, 1);
+
+        // Log the time of the event in this bin
+        // This might be slow because it's dynamically resizing the vector, but should be ok for our purposes.
+        binnedTimes[bin].push_back(decayTimes[i]);
+    }
 }
 
 #endif // DECAYSDATA_CPP

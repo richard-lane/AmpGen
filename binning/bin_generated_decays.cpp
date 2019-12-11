@@ -22,13 +22,7 @@
 #include "DecaysData.cpp"
 #include "DecaysData.h"
 #include "binning_helpers.cpp"
-#include "k3pi_binning.h"
 #include "plottingHelpers.cpp"
-
-// ---- Magic Numbers
-// DCS and CF relative amplitude and phase
-#define DCS_MAGNITUDE 0.0445
-#define DCS_PHASE -3.04
 
 /*
  * In each phase-space bin, bin the data by time into bins defined by timeBinLimits
@@ -83,12 +77,6 @@ void binDataTimeBinLimits(std::vector<std::vector<double>> &                   b
  */
 void bin_generated_decays(TFile *mixedDecays)
 {
-    // Define the bins based on the form of the DCS and CF decays
-    const std::string          dcsFile{"binning/dcs.so"};
-    const std::string          cfFile{"binning/cf.so"};
-    const std::complex<double> dcs_offset = DCS_MAGNITUDE * exp(std::complex<double>(0, 1) * DCS_PHASE * M_PI / 180.);
-    k3pi_binning::binning      bins(dcsFile, cfFile, dcs_offset, {BIN_LIMITS});
-
     // Create a D2K3piData class instance to encapsulate the data in our ROOT file
     D2K3PiData MixedData = D2K3PiData(mixedDecays, "DalitzEventList");
     MixedData.populate("D_decayTime");
@@ -96,20 +84,8 @@ void bin_generated_decays(TFile *mixedDecays)
     // Make some plots to check that the data from ROOT has been read in correctly
     plot_things(MixedData.kVectors, MixedData.pi1Vectors, MixedData.pi2Vectors);
 
-    for (size_t i = 0; i < MixedData.numEvents; ++i) {
-        // Create a vector of TLorentzVectors for this event (K+, pi-, pi-, pi+)
-        std::vector<TLorentzVector> eventVector{
-            MixedData.kVectors[i], MixedData.pi1Vectors[i], MixedData.pi2Vectors[i], MixedData.pi3Vectors[i]};
-        auto event = k3pi_binning::eventFromVectors(eventVector);
-
-        // Find which bin the event belongs in
-        // The 1 tags the sign of the K meson in the D->K3pi decay
-        int bin = bins.bin(eventVector, 1);
-
-        // Log the time of the event in this bin
-        // This might be slow because it's dynamically resizing the vector, but should be ok for our purposes.
-        MixedData.binnedTimes[bin].push_back(MixedData.decayTimes[i]);
-    }
+    // Perform binning; binned times will be set in MixedData.binnedTimes
+    MixedData.binTimes();
 
     // Find the number of points in each bin and output to console
     std::vector<size_t> binSizes(NUM_BINS);
