@@ -24,6 +24,11 @@ class DecaysData
 
   private:
     void getNumEvents();
+
+    // Helpers for writing vectors and such
+    void writeBranchToLorentzVectors(const std::string &          branchName,
+                                                 std::vector<TLorentzVector> &myVector,
+                                                 const size_t &               index);
 };
 
 /*

@@ -24,7 +24,6 @@
 #include "binning_helpers.cpp"
 #include "k3pi_binning.h"
 #include "plottingHelpers.cpp"
-#include "rootfile_helpers.cpp"
 
 // ---- Magic Numbers
 // DCS and CF relative amplitude and phase
