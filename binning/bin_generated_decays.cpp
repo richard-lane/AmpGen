@@ -23,6 +23,15 @@
 #include "DecaysData.h"
 #include "plottingHelpers.cpp"
 
+void printBinSizes(std::vector<std::vector<double>> binnedTimes)
+{
+    std::vector<size_t> binSizes(NUM_BINS);
+    for (size_t bin = 0; bin < NUM_BINS; ++bin) {
+        binSizes[bin] = binnedTimes[bin].size();
+        std::cout << "points in bin " << bin << ": " << binSizes[bin] << std::endl;
+    }
+}
+
 /*
  * Bin the CF and Mixed decays modelled in an AmpGen generated inputFile into phase bins as defined by $BIN_LIMITS
  *
@@ -42,11 +51,7 @@ void bin_generated_decays(TFile *mixedDecays)
     MixedData.binTimes();
 
     // Find the number of points in each bin and output to console
-    std::vector<size_t> binSizes(NUM_BINS);
-    for (size_t bin = 0; bin < NUM_BINS; ++bin) {
-        binSizes[bin] = MixedData.binnedTimes[bin].size();
-        std::cout << "points in bin " << bin << ": " << binSizes[bin] << std::endl;
-    }
+    printBinSizes(MixedData.binnedTimes);
 
     // Sort the data in each bin in increasing time order and bin the times based on time bins defined in
     // D2K3PiData.setTimeBins()
