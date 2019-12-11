@@ -31,7 +31,6 @@
  *
  * binRatios and binTimes should be sorted in order of increasing time
  *
- */
 void binDataTimeBinLimits(std::vector<std::vector<double>> &                   binRatioAverage,
                           std::vector<std::vector<double>> &                   binTimesAverage,
                           std::vector<std::vector<double>> &                   binRatioStdDev,
@@ -68,6 +67,7 @@ void binDataTimeBinLimits(std::vector<std::vector<double>> &                   b
         }
     }
 }
+ */
 
 /*
  * Bin the CF and Mixed decays modelled in an AmpGen generated inputFile into phase bins as defined by $BIN_LIMITS

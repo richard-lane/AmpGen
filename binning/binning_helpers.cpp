@@ -68,7 +68,9 @@ std::vector<std::vector<std::vector<double>>> splitVectorsEqualChunks(const std:
 }
 
 /*
- * Split a vector based on binLimits
+ * Split a (sorted) vector based on binLimits
+ * Bin limits define lowest, highest and intermediate points
+ * Bin limits should be sorted
  */
 std::vector<std::vector<double>> splitVectorWithLimits(std::vector<double> &myVector, std::vector<double> binLimits)
 {
