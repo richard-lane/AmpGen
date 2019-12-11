@@ -19,7 +19,8 @@
 #include "TH1D.h"
 #include "TRandom.h"
 
-#include "bin_generated_decays.h"
+#include "DecaysData.cpp"
+#include "DecaysData.h"
 #include "binning_helpers.cpp"
 #include "k3pi_binning.h"
 #include "plottingHelpers.cpp"
@@ -33,53 +34,6 @@
 /// Bin limits in phase, centred on zero by construction
 #define NUM_BINS 5
 #define BIN_LIMITS -39, 0, 43, 180
-
-// Stuff for the decay data class
-/*
- * Constructor
- */
-DecaysData::DecaysData(TFile *myTFile, std::string treeName)
-{
-    myTFile->GetObject(treeName.c_str(), myTree);
-    getNumEvents();
-}
-
-/*
- * Write the data for a given particle to a vector of TLorentzVectors
- */
-const std::vector<TLorentzVector> DecaysData::particleData(std::string particleName)
-{
-    return writeVector(*myTree, particleName);
-}
-
-/*
- * Find how many events in our tree and set it to numEvents
- */
-void DecaysData::getNumEvents()
-{
-    numEvents = myTree->GetEntries();
-}
-
-/*
- * Set decay times using the right branch name
- */
-void D2K3PiData::setDecayTimes(std::string timesBranchName)
-{
-    decayTimes = std::vector<double>(numEvents, -1);
-    saveBranchToVector(*myTree, timesBranchName, decayTimes);
-}
-
-/*
- * Populate a D2K3PiData class with particle data
- */
-void D2K3PiData::populate(std::string timesBranchName)
-{
-    kVectors   = particleData("_1_K~");
-    pi1Vectors = particleData("_2_pi#");
-    pi2Vectors = particleData("_3_pi#");
-    pi3Vectors = particleData("_4_pi~");
-    setDecayTimes(timesBranchName);
-}
 
 /*
  * In each phase-space bin, bin the data by time into bins defined by timeBinLimits

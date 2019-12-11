@@ -1,6 +1,8 @@
 /*
  * Helper functions for k3pi binning
  */
+#ifndef BINNING_HELPERS_CPP
+#define BINNING_HELPERS_CPP
 
 #include <algorithm>
 #include <cmath>
@@ -182,3 +184,5 @@ void vectorOfPairs2vectors(std::vector<double> &                   firstOutVecto
         secondOutVector.push_back(vectorOfPairs[i].second);
     }
 }
+
+#endif // BINNING_HELPERS_CPP

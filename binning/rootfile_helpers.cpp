@@ -1,3 +1,6 @@
+#ifndef ROOTFILE_HELPERS_CPP
+#define ROOTFILE_HELPERS_CPP
+
 #include "TLorentzVector.h"
 #include "TTree.h"
 
@@ -55,3 +58,5 @@ std::vector<TLorentzVector> writeVector(TTree &myTree, const std::string &partic
 
     return myVector;
 }
+
+#endif // ROOTFILE_HELPERS_CPP
