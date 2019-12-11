@@ -117,4 +117,14 @@ void D2K3PiData::binTimes(void)
     }
 }
 
+/*
+ * Sort our vectors of binned times into increasing order
+ */
+void D2K3PiData::sortBinnedTimes()
+{
+    for (size_t i = 0; i < NUM_BINS; ++i) {
+        std::sort(binnedTimes[i].begin(), binnedTimes[i].end());
+    }
+}
+
 #endif // DECAYSDATA_CPP

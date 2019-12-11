@@ -50,7 +50,9 @@ class D2K3PiData : public DecaysData
   public:
     void populate(std::string timesBranchName);
     void setDecayTimes(std::string timesBranchName);
+
     void binTimes(void);
+    void sortBinnedTimes();
 
     std::vector<double>         decayTimes{};
     std::vector<TLorentzVector> kVectors{};

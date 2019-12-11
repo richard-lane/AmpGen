@@ -141,16 +141,6 @@ splitVectorsWithLimits(const std::vector<std::vector<std::pair<double, double>>>
 }
 
 /*
- * Sort a vector of vectors
- */
-void sortVectorOfVectors(std::vector<std::vector<double>> &myVector)
-{
-    for (size_t i = 0; i < myVector.size(); ++i) {
-        std::sort(myVector[i].begin(), myVector[i].end());
-    }
-}
-
-/*
  * Given a vector of vector of pairs, sort each vector of pairs into ascending order based on the second element in the
  * pair.
  *

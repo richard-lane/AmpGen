@@ -95,7 +95,7 @@ void bin_generated_decays(TFile *mixedDecays)
     }
 
     // Sort the data in each bin in increasing time order
-    sortVectorOfVectors(MixedData.binnedTimes);
+    MixedData.sortBinnedTimes();
 
     // Bin data into time bins defined by a vector
     std::vector<double> timeBinLimits{};
