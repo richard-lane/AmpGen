@@ -19,6 +19,7 @@
 #include "TH1D.h"
 #include "TRandom.h"
 
+#include "bin_generated_decays.h"
 #include "binning_helpers.cpp"
 #include "k3pi_binning.h"
 #include "plottingHelpers.cpp"
@@ -32,6 +33,32 @@
 /// Bin limits in phase, centred on zero by construction
 #define NUM_BINS 5
 #define BIN_LIMITS -39, 0, 43, 180
+
+// Stuff for the decay data class
+/*
+ * Constructor
+ */
+DecaysData::DecaysData(TFile *myTFile, std::string treeName)
+{
+    myTFile->GetObject(treeName.c_str(), myTree);
+    getNumEvents();
+}
+
+/*
+ * Write the data for a given particle to a vector of TLorentzVectors
+ */
+const std::vector<TLorentzVector> DecaysData::particleData(std::string particleName)
+{
+    return writeVector(*myTree, particleName);
+}
+
+/*
+ * Find how many events in our tree and set it to numEvents
+ */
+void DecaysData::getNumEvents()
+{
+    numEvents = myTree->GetEntries();
+}
 
 /*
  * In each phase-space bin, bin the data by time into bins defined by timeBinLimits
@@ -79,12 +106,12 @@ void binDataTimeBinLimits(std::vector<std::vector<double>> &                   b
 }
 
 /*
- * Bin the decays modelled in an AmpGen generated inputFile into phase bins as defined by $BIN_LIMITS
+ * Bin the CF and Mixed decays modelled in an AmpGen generated inputFile into phase bins as defined by $BIN_LIMITS
  *
  * This function is far too long but i think its probably ok for now
  *
  */
-void bin_generated_decays(TFile *inputFile)
+void bin_generated_decays(TFile *mixedDecays)
 {
     // Define the bins based on the form of the DCS and CF decays
     const std::string          dcsFile{"binning/dcs.so"};
@@ -92,10 +119,17 @@ void bin_generated_decays(TFile *inputFile)
     const std::complex<double> dcs_offset = DCS_MAGNITUDE * exp(std::complex<double>(0, 1) * DCS_PHASE * M_PI / 180.);
     k3pi_binning::binning      bins(dcsFile, cfFile, dcs_offset, {BIN_LIMITS});
 
+    // Create a D2K3piData class instance to encapsulate the data in our ROOT file
+    D2K3PiData MixedData = D2K3PiData(mixedDecays, "DalitzEventList");
+    MixedData.kVectors   = MixedData.particleData("_1_K~");
+    MixedData.pi1Vectors = MixedData.particleData("_2_pi#");
+    MixedData.pi2Vectors = MixedData.particleData("_3_pi#");
+    MixedData.pi3Vectors = MixedData.particleData("_4_pi~");
+
     // Read in the tree and branches from the provided ROOT file
     // The tree of interest is DalitzEventList as this contains the decay products' kinematic data
     TTree *myTree = nullptr;
-    inputFile->GetObject("DalitzEventList", myTree);
+    mixedDecays->GetObject("DalitzEventList", myTree);
     long long numGeneratedEvents{myTree->GetEntries()};
 
     // Read in vectors of particle data from the ROOT file
