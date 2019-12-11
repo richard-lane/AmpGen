@@ -5,6 +5,7 @@
 
 #include "DecaysData.h"
 
+#include "TCanvas.h"
 #include "TFile.h"
 #include "k3pi_binning.h"
 
@@ -203,6 +204,32 @@ void D2K3PiData::splitTimes()
     for (size_t bin = 0; bin < NUM_BINS; ++bin) {
         timeBinnedTimes[bin] = splitVectorWithLimits(binnedTimes[bin]);
     }
+}
+
+/*
+ * Find how many points there are in each time bin
+ */
+void D2K3PiData::setNumPointsPerTimeBin()
+{
+    for (size_t bin = 0; bin < NUM_BINS; ++bin) {
+        for (size_t i = 0; i < timeBinnedTimes[bin].size(); ++i) {
+            numPointsPerTimeBin[bin].push_back(timeBinnedTimes[bin][i].size());
+        }
+    }
+}
+
+/*
+ * Plot time and phase space histogram of decay times in a given bin
+ */
+void D2K3PiData::plotBinnedTimes(size_t bin)
+{
+    size_t   numTimeBins = timeBinLimits.size() - 1;
+    TCanvas *c           = new TCanvas();
+    TH1D *   MyHist      = new TH1D("Decay Times", "", numTimeBins, timeBinLimits.data());
+    for (size_t i = 0; i < numTimeBins; ++i) {
+        MyHist->SetBinContent(i, numPointsPerTimeBin[bin][i]);
+    }
+    MyHist->Draw();
 }
 
 #endif // DECAYSDATA_CPP

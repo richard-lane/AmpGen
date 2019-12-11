@@ -59,6 +59,8 @@ class D2K3PiData : public DecaysData
     // Time binning methods
     void setTimeBins();
     void splitTimes();
+    void setNumPointsPerTimeBin();
+    void plotBinnedTimes(size_t bin);
 
     // Particle data
     std::vector<double>         decayTimes{};
@@ -73,6 +75,7 @@ class D2K3PiData : public DecaysData
     // Time binning data
     std::vector<double>                           timeBinLimits;
     std::vector<std::vector<std::vector<double>>> timeBinnedTimes{NUM_BINS};
+    std::vector<std::vector<size_t>>              numPointsPerTimeBin{NUM_BINS};
 
   private:
     const std::string          dcsFile{"binning/dcs.so"};

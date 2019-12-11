@@ -52,21 +52,13 @@ void bin_generated_decays(TFile *mixedDecays)
     // D2K3PiData.setTimeBins()
     MixedData.sortBinnedTimes();
     MixedData.setTimeBins();
-
     MixedData.splitTimes();
 
     // Find how many points there are in each time bin
-    std::vector<std::vector<size_t>> numPointsPerTimeBin(NUM_BINS);
+    MixedData.setNumPointsPerTimeBin();
 
-    for (size_t bin = 0; bin < NUM_BINS; ++bin) {
-        for (size_t i = 0; i < MixedData.timeBinnedTimes[bin].size(); ++i) {
-            numPointsPerTimeBin[bin].push_back(MixedData.timeBinnedTimes[bin][i].size());
-        }
+    // Plot the hist of times in each bin
+    for (size_t bin = 0; bin < NUM_BINS; bin++) {
+        MixedData.plotBinnedTimes(bin);
     }
-
-    TH1D *MyHist = new TH1D("foo", "foo", MixedData.timeBinLimits.size() - 1, MixedData.timeBinLimits.data());
-    for (size_t i = 0; i < MixedData.timeBinLimits.size() - 1; ++i) {
-        MyHist->SetBinContent(i, numPointsPerTimeBin[0][i]);
-    }
-    MyHist->Draw();
 }
