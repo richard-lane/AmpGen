@@ -38,20 +38,27 @@ void printBinSizes(std::vector<std::vector<double>> binnedTimes)
  * This function is far too long but i think its probably ok for now
  *
  */
-void bin_generated_decays(TFile *mixedDecays)
+void bin_generated_decays(TFile *mixedDecays, TFile *favouredDecays)
 {
     // Create a D2K3piData class instance to encapsulate the data in our ROOT file
     D2K3PiData MixedData = D2K3PiData(mixedDecays, "DalitzEventList");
     MixedData.populate("D_decayTime");
+
+    D2K3PiData FavouredData = D2K3PiData(favouredDecays, "DalitzEventList");
+    FavouredData.populate("Dbar0_decayTime");
 
     // Make some plots to check that the data from ROOT has been read in correctly
     // plot_things(MixedData.kVectors, MixedData.pi1Vectors, MixedData.pi2Vectors);
 
     // Perform binning; binned times will be set in MixedData.binnedTimes
     MixedData.binTimes();
+    FavouredData.binTimes();
 
     // Find the number of points in each bin and output to console
+    std::cout << "Mixed:" << std::endl;
     printBinSizes(MixedData.binnedTimes);
+    std::cout << "Favoured:" << std::endl;
+    printBinSizes(FavouredData.binnedTimes);
 
     // Sort the data in each bin in increasing time order and bin the times based on time bins defined in
     // D2K3PiData.setTimeBins()
@@ -59,11 +66,17 @@ void bin_generated_decays(TFile *mixedDecays)
     MixedData.setTimeBins();
     MixedData.splitTimes();
 
+    FavouredData.sortBinnedTimes();
+    FavouredData.setTimeBins();
+    FavouredData.splitTimes();
+
     // Find how many points there are in each time bin
     MixedData.setNumPointsPerTimeBin();
+    FavouredData.setNumPointsPerTimeBin();
 
     // Plot the hist of times in each bin
     for (size_t bin = 0; bin < NUM_BINS; bin++) {
         MixedData.plotBinnedTimes(bin);
+        FavouredData.plotBinnedTimes(bin);
     }
 }
