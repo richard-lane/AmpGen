@@ -46,25 +46,4 @@ std::vector<std::vector<double>> splitVectorWithLimits(std::vector<double> &myVe
     return splitVector;
 }
 
-/*
- * Convert a vector of pairs to two vectors
- *
- */
-void vectorOfPairs2vectors(std::vector<double> &                   firstOutVector,
-                           std::vector<double> &                   secondOutVector,
-                           std::vector<std::pair<double, double>> &vectorOfPairs)
-{
-    // Check that our two out args are empty vectors
-    if (!firstOutVector.empty() || !secondOutVector.empty()) {
-        std::cout << "Bad out args passed to vectorOfPairs2vectors" << std::endl;
-        throw;
-    }
-
-    size_t numPairs = vectorOfPairs.size();
-    for (size_t i = 0; i < numPairs; ++i) {
-        firstOutVector.push_back(vectorOfPairs[i].first);
-        secondOutVector.push_back(vectorOfPairs[i].second);
-    }
-}
-
 #endif // BINNING_HELPERS_CPP
