@@ -127,4 +127,15 @@ void D2K3PiData::sortBinnedTimes()
     }
 }
 
+/*
+ * Set time bins
+ */
+void D2K3PiData::setTimeBins()
+{
+
+    for (double i = 0; i < 300; ++i) {
+        timeBinLimits.push_back(i / 100000);
+    }
+}
+
 #endif // DECAYSDATA_CPP

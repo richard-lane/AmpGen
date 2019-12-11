@@ -98,14 +98,11 @@ void bin_generated_decays(TFile *mixedDecays)
     MixedData.sortBinnedTimes();
 
     // Bin data into time bins defined by a vector
-    std::vector<double> timeBinLimits{};
-    for (double i = 0; i < 300; ++i) {
-        timeBinLimits.push_back(i / 100000);
-    }
+    MixedData.setTimeBins();
 
     std::vector<std::vector<std::vector<double>>> timeBinnedData(NUM_BINS);
     for (size_t bin = 0; bin < NUM_BINS; ++bin) {
-        timeBinnedData[bin] = splitVectorWithLimits(MixedData.binnedTimes[bin], timeBinLimits);
+        timeBinnedData[bin] = splitVectorWithLimits(MixedData.binnedTimes[bin], MixedData.timeBinLimits);
     }
 
     // Find how many points there are in each time bin
@@ -117,8 +114,8 @@ void bin_generated_decays(TFile *mixedDecays)
         }
     }
 
-    TH1D *MyHist = new TH1D("foo", "foo", timeBinLimits.size() - 1, timeBinLimits.data());
-    for (size_t i = 0; i < timeBinLimits.size() - 1; ++i) {
+    TH1D *MyHist = new TH1D("foo", "foo", MixedData.timeBinLimits.size() - 1, MixedData.timeBinLimits.data());
+    for (size_t i = 0; i < MixedData.timeBinLimits.size() - 1; ++i) {
         MyHist->SetBinContent(i, numPointsPerTimeBin[0][i]);
     }
     MyHist->Draw();

@@ -48,19 +48,29 @@ class D2K3PiData : public DecaysData
     using DecaysData::DecaysData;
 
   public:
+    // Particle data methods
     void populate(std::string timesBranchName);
     void setDecayTimes(std::string timesBranchName);
 
+    // Phase-space binning methods
     void binTimes(void);
     void sortBinnedTimes();
 
+    // Time binning methods
+    void setTimeBins();
+
+    // Particle data
     std::vector<double>         decayTimes{};
     std::vector<TLorentzVector> kVectors{};
     std::vector<TLorentzVector> pi1Vectors{};
     std::vector<TLorentzVector> pi2Vectors{};
     std::vector<TLorentzVector> pi3Vectors{};
 
+    // Phase space binning data
     std::vector<std::vector<double>> binnedTimes{NUM_BINS};
+
+    // Time binning data
+    std::vector<double>              timeBinLimits;
 
   private:
     const std::string          dcsFile{"binning/dcs.so"};
