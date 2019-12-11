@@ -61,6 +61,15 @@ void DecaysData::getNumEvents()
 }
 
 /*
+ * Set decay times using the right branch name
+ */
+void D2K3PiData::setDecayTimes(std::string timesBranchName)
+{
+    decayTimes = std::vector<double>(numEvents, -1);
+    saveBranchToVector(*myTree, timesBranchName, decayTimes);
+}
+
+/*
  * In each phase-space bin, bin the data by time into bins defined by timeBinLimits
  *
  * binRatioAverage etc. are out args that are modified by this function
@@ -139,11 +148,12 @@ void bin_generated_decays(TFile *mixedDecays)
     const std::vector<TLorentzVector> pi3Vectors = writeVector(*myTree, "_4_pi~");
 
     // Read the time data from the ROOT file into a vector
+    MixedData.setDecayTimes("D_decayTime");
     std::vector<double> times(numGeneratedEvents, -1);
     saveBranchToVector(*myTree, "D_decayTime", times);
 
     // Make some plots to check that the data from ROOT has been read in correctly
-    // plot_things(kVectors, pi1Vectors, pi2Vectors);
+    plot_things(MixedData.kVectors, MixedData.pi1Vectors, MixedData.pi2Vectors);
 
     // Store the time of each event in a vector
     std::vector<std::vector<double>> binTimes(NUM_BINS);

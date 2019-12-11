@@ -19,9 +19,11 @@ class DecaysData
 
     size_t numEvents;
 
-  private:
+  protected:
     TTree *myTree;
-    void   getNumEvents();
+
+  private:
+    void getNumEvents();
 };
 
 /*
@@ -32,6 +34,9 @@ class D2K3PiData : public DecaysData
     using DecaysData::DecaysData;
 
   public:
+    void setDecayTimes(std::string timesBranchName);
+
+    std::vector<double>         decayTimes{};
     std::vector<TLorentzVector> kVectors{};
     std::vector<TLorentzVector> pi1Vectors{};
     std::vector<TLorentzVector> pi2Vectors{};
