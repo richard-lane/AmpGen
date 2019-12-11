@@ -21,7 +21,6 @@
 
 #include "DecaysData.cpp"
 #include "DecaysData.h"
-#include "binning_helpers.cpp"
 #include "plottingHelpers.cpp"
 
 /*
@@ -37,7 +36,7 @@ void bin_generated_decays(TFile *mixedDecays)
     MixedData.populate("D_decayTime");
 
     // Make some plots to check that the data from ROOT has been read in correctly
-    plot_things(MixedData.kVectors, MixedData.pi1Vectors, MixedData.pi2Vectors);
+    // plot_things(MixedData.kVectors, MixedData.pi1Vectors, MixedData.pi2Vectors);
 
     // Perform binning; binned times will be set in MixedData.binnedTimes
     MixedData.binTimes();
@@ -49,23 +48,19 @@ void bin_generated_decays(TFile *mixedDecays)
         std::cout << "points in bin " << bin << ": " << binSizes[bin] << std::endl;
     }
 
-    // Sort the data in each bin in increasing time order
+    // Sort the data in each bin in increasing time order and bin the times based on time bins defined in
+    // D2K3PiData.setTimeBins()
     MixedData.sortBinnedTimes();
-
-    // Bin data into time bins defined by a vector
     MixedData.setTimeBins();
 
-    std::vector<std::vector<std::vector<double>>> timeBinnedData(NUM_BINS);
-    for (size_t bin = 0; bin < NUM_BINS; ++bin) {
-        timeBinnedData[bin] = splitVectorWithLimits(MixedData.binnedTimes[bin], MixedData.timeBinLimits);
-    }
+    MixedData.splitTimes();
 
     // Find how many points there are in each time bin
     std::vector<std::vector<size_t>> numPointsPerTimeBin(NUM_BINS);
 
     for (size_t bin = 0; bin < NUM_BINS; ++bin) {
-        for (size_t i = 0; i < timeBinnedData[bin].size(); ++i) {
-            numPointsPerTimeBin[bin].push_back(timeBinnedData[bin][i].size());
+        for (size_t i = 0; i < MixedData.timeBinnedTimes[bin].size(); ++i) {
+            numPointsPerTimeBin[bin].push_back(MixedData.timeBinnedTimes[bin][i].size());
         }
     }
 

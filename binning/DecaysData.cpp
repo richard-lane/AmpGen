@@ -1,8 +1,9 @@
 #ifndef DECAYSDATA_CPP
 #define DECAYSDATA_CPP
 
+#include <iostream>
+
 #include "DecaysData.h"
-#include "binning_helpers.cpp"
 
 #include "TFile.h"
 #include "k3pi_binning.h"
@@ -133,8 +134,74 @@ void D2K3PiData::sortBinnedTimes()
 void D2K3PiData::setTimeBins()
 {
 
-    for (double i = 0; i < 300; ++i) {
+    for (double i = 0; i < 341; ++i) {
         timeBinLimits.push_back(i / 100000);
+    }
+}
+
+/*
+ * Split a (sorted) vector based on timeBinLimits (it wouldn't be hard to make this work with unsorted vectors, though
+ * it's slightly more efficient if we demand that vectors are sorted)
+ *
+ * Bin limits define lowest, highest and intermediate points
+ * Bin limits should be sorted
+ */
+std::vector<std::vector<double>> D2K3PiData::splitVectorWithLimits(std::vector<double> &myVector)
+{
+    // Bin limits should be sorted
+    if (!std::is_sorted(timeBinLimits.begin(), timeBinLimits.end())) {
+        std::cerr << "Bad time bin limits; should be sorted" << std::endl;
+        throw;
+    }
+
+    // Vector should be sorted
+    if (!std::is_sorted(myVector.begin(), myVector.end())) {
+        std::cerr << "Vector must be sorted in order to split" << std::endl;
+        throw;
+    }
+
+    // First point in the vector should be in a bin; if it is smaller than the lowest bin emit a warning
+    if (myVector[0] < timeBinLimits[0]) {
+        std::cerr << "[warning] Vector contains values smaller than lowest bin limit" << std::endl;
+    }
+
+    // Last point in the vector should be in a bin; throw if it is larger than the highest bin
+    size_t vectorSize = myVector.size();
+    size_t numBins    = timeBinLimits.size() - 1;
+    if (myVector[vectorSize - 1] > timeBinLimits[numBins]) {
+        std::cerr << "Vector extends over range larger than largest bin limit" << std::endl;
+        throw;
+    }
+
+    // Split our vector into smaller vectors along the bin limits
+    std::vector<std::vector<double>> splitVector(numBins);
+
+    // Left edge of bin we are currently inserting points into
+    size_t currentTimeBin = 0;
+    for (size_t i = 0; i < vectorSize; ++i) {
+        // If this value is more than the bin limit, we want to put subsequent points in a higher bin
+        while (myVector[i] > timeBinLimits[currentTimeBin + 1]) {
+            currentTimeBin += 1;
+
+            // I think this code never gets called...?
+            if (currentTimeBin > numBins) {
+                std::cerr << "Attempted to insert points into a bin that does not exist" << std::endl;
+                throw;
+            }
+        }
+        splitVector[currentTimeBin].push_back(myVector[i]);
+    }
+
+    return splitVector;
+}
+
+/*
+ * Populate timeBinnedTimes with the times binned along timeBinLimits
+ */
+void D2K3PiData::splitTimes()
+{
+    for (size_t bin = 0; bin < NUM_BINS; ++bin) {
+        timeBinnedTimes[bin] = splitVectorWithLimits(binnedTimes[bin]);
     }
 }
 

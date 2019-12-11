@@ -58,6 +58,7 @@ class D2K3PiData : public DecaysData
 
     // Time binning methods
     void setTimeBins();
+    void splitTimes();
 
     // Particle data
     std::vector<double>         decayTimes{};
@@ -70,12 +71,15 @@ class D2K3PiData : public DecaysData
     std::vector<std::vector<double>> binnedTimes{NUM_BINS};
 
     // Time binning data
-    std::vector<double>              timeBinLimits;
+    std::vector<double>                           timeBinLimits;
+    std::vector<std::vector<std::vector<double>>> timeBinnedTimes{NUM_BINS};
 
   private:
     const std::string          dcsFile{"binning/dcs.so"};
     const std::string          cfFile{"binning/cf.so"};
     const std::complex<double> dcs_offset = DCS_MAGNITUDE * exp(std::complex<double>(0, 1) * DCS_PHASE * M_PI / 180.);
+
+    std::vector<std::vector<double>> splitVectorWithLimits(std::vector<double> &myVector);
 };
 
 #endif // BIN_GENERATED_DECAYS_HPP
