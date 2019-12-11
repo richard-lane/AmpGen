@@ -6,6 +6,10 @@
 #include "TLorentzVector.h"
 #include "TTree.h"
 
+/// Bin limits in phase, centred on zero by construction
+#define NUM_BINS 5
+#define BIN_LIMITS -39, 0, 43, 180
+
 /*
  * Class representing the data stored in a ROOT file for a series of decays
  *
@@ -18,6 +22,8 @@ class DecaysData
     const std::vector<TLorentzVector> particleData(std::string particleName);
 
     size_t numEvents;
+
+    std::vector<std::vector<double>> binnedTimes{NUM_BINS};
 
   protected:
     TTree *myTree;

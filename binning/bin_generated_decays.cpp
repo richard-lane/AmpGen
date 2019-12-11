@@ -30,10 +30,6 @@
 #define DCS_MAGNITUDE 0.0445
 #define DCS_PHASE -3.04
 
-/// Bin limits in phase, centred on zero by construction
-#define NUM_BINS 5
-#define BIN_LIMITS -39, 0, 43, 180
-
 /*
  * In each phase-space bin, bin the data by time into bins defined by timeBinLimits
  *
@@ -100,8 +96,6 @@ void bin_generated_decays(TFile *mixedDecays)
     // Make some plots to check that the data from ROOT has been read in correctly
     plot_things(MixedData.kVectors, MixedData.pi1Vectors, MixedData.pi2Vectors);
 
-    // Store the time of each event in a vector
-    std::vector<std::vector<double>> binTimes(NUM_BINS);
     for (size_t i = 0; i < MixedData.numEvents; ++i) {
         // Create a vector of TLorentzVectors for this event (K+, pi-, pi-, pi+)
         std::vector<TLorentzVector> eventVector{
@@ -114,18 +108,18 @@ void bin_generated_decays(TFile *mixedDecays)
 
         // Log the time of the event in this bin
         // This might be slow because it's dynamically resizing the vector, but should be ok for our purposes.
-        binTimes[bin].push_back(MixedData.decayTimes[i]);
+        MixedData.binnedTimes[bin].push_back(MixedData.decayTimes[i]);
     }
 
     // Find the number of points in each bin and output to console
     std::vector<size_t> binSizes(NUM_BINS);
     for (size_t bin = 0; bin < NUM_BINS; ++bin) {
-        binSizes[bin] = binTimes[bin].size();
+        binSizes[bin] = MixedData.binnedTimes[bin].size();
         std::cout << "points in bin " << bin << ": " << binSizes[bin] << std::endl;
     }
 
     // Sort the data in each bin in increasing time order
-    sortVectorOfVectors(binTimes);
+    sortVectorOfVectors(MixedData.binnedTimes);
 
     // Bin data into time bins defined by a vector
     std::vector<double> timeBinLimits{};
@@ -135,7 +129,7 @@ void bin_generated_decays(TFile *mixedDecays)
 
     std::vector<std::vector<std::vector<double>>> timeBinnedData(NUM_BINS);
     for (size_t bin = 0; bin < NUM_BINS; ++bin) {
-        timeBinnedData[bin] = splitVectorWithLimits(binTimes[bin], timeBinLimits);
+        timeBinnedData[bin] = splitVectorWithLimits(MixedData.binnedTimes[bin], timeBinLimits);
     }
 
     // Find how many points there are in each time bin
