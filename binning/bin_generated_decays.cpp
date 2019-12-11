@@ -70,6 +70,18 @@ void D2K3PiData::setDecayTimes(std::string timesBranchName)
 }
 
 /*
+ * Populate a D2K3PiData class with particle data
+ */
+void D2K3PiData::populate(std::string timesBranchName)
+{
+    kVectors   = particleData("_1_K~");
+    pi1Vectors = particleData("_2_pi#");
+    pi2Vectors = particleData("_3_pi#");
+    pi3Vectors = particleData("_4_pi~");
+    setDecayTimes(timesBranchName);
+}
+
+/*
  * In each phase-space bin, bin the data by time into bins defined by timeBinLimits
  *
  * binRatioAverage etc. are out args that are modified by this function
@@ -130,37 +142,18 @@ void bin_generated_decays(TFile *mixedDecays)
 
     // Create a D2K3piData class instance to encapsulate the data in our ROOT file
     D2K3PiData MixedData = D2K3PiData(mixedDecays, "DalitzEventList");
-    MixedData.kVectors   = MixedData.particleData("_1_K~");
-    MixedData.pi1Vectors = MixedData.particleData("_2_pi#");
-    MixedData.pi2Vectors = MixedData.particleData("_3_pi#");
-    MixedData.pi3Vectors = MixedData.particleData("_4_pi~");
-
-    // Read in the tree and branches from the provided ROOT file
-    // The tree of interest is DalitzEventList as this contains the decay products' kinematic data
-    TTree *myTree = nullptr;
-    mixedDecays->GetObject("DalitzEventList", myTree);
-    long long numGeneratedEvents{myTree->GetEntries()};
-
-    // Read in vectors of particle data from the ROOT file
-    const std::vector<TLorentzVector> kVectors   = writeVector(*myTree, "_1_K~");
-    const std::vector<TLorentzVector> pi1Vectors = writeVector(*myTree, "_2_pi#");
-    const std::vector<TLorentzVector> pi2Vectors = writeVector(*myTree, "_3_pi#");
-    const std::vector<TLorentzVector> pi3Vectors = writeVector(*myTree, "_4_pi~");
-
-    // Read the time data from the ROOT file into a vector
-    MixedData.setDecayTimes("D_decayTime");
-    std::vector<double> times(numGeneratedEvents, -1);
-    saveBranchToVector(*myTree, "D_decayTime", times);
+    MixedData.populate("D_decayTime");
 
     // Make some plots to check that the data from ROOT has been read in correctly
     plot_things(MixedData.kVectors, MixedData.pi1Vectors, MixedData.pi2Vectors);
 
     // Store the time of each event in a vector
     std::vector<std::vector<double>> binTimes(NUM_BINS);
-    for (int i = 0; i < numGeneratedEvents; ++i) {
+    for (size_t i = 0; i < MixedData.numEvents; ++i) {
         // Create a vector of TLorentzVectors for this event (K+, pi-, pi-, pi+)
-        std::vector<TLorentzVector> eventVector{kVectors[i], pi1Vectors[i], pi2Vectors[i], pi3Vectors[i]};
-        auto                        event = k3pi_binning::eventFromVectors(eventVector);
+        std::vector<TLorentzVector> eventVector{
+            MixedData.kVectors[i], MixedData.pi1Vectors[i], MixedData.pi2Vectors[i], MixedData.pi3Vectors[i]};
+        auto event = k3pi_binning::eventFromVectors(eventVector);
 
         // Find which bin the event belongs in
         // The 1 tags the sign of the K meson in the D->K3pi decay
@@ -168,7 +161,7 @@ void bin_generated_decays(TFile *mixedDecays)
 
         // Log the time of the event in this bin
         // This might be slow because it's dynamically resizing the vector, but should be ok for our purposes.
-        binTimes[bin].push_back(times[i]);
+        binTimes[bin].push_back(MixedData.decayTimes[i]);
     }
 
     // Find the number of points in each bin and output to console

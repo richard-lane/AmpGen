@@ -34,6 +34,7 @@ class D2K3PiData : public DecaysData
     using DecaysData::DecaysData;
 
   public:
+    void populate(std::string timesBranchName);
     void setDecayTimes(std::string timesBranchName);
 
     std::vector<double>         decayTimes{};
