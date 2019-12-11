@@ -25,51 +25,6 @@
 #include "plottingHelpers.cpp"
 
 /*
- * In each phase-space bin, bin the data by time into bins defined by timeBinLimits
- *
- * binRatioAverage etc. are out args that are modified by this function
- *
- * binRatios and binTimes should be sorted in order of increasing time
- *
-void binDataTimeBinLimits(std::vector<std::vector<double>> &                   binRatioAverage,
-                          std::vector<std::vector<double>> &                   binTimesAverage,
-                          std::vector<std::vector<double>> &                   binRatioStdDev,
-                          std::vector<std::vector<double>> &                   binTimesStdDev,
-                          std::vector<std::vector<std::pair<double, double>>> &binData,
-                          std::vector<double> &                                timeBinLimits)
-{
-    size_t numTimeBins = timeBinLimits.size() + 1;
-
-    // Create vectors of the right length to hold the average and std devs for each bin
-    for (size_t bin = 0; bin < NUM_BINS; ++bin) {
-        binRatioAverage[bin] = std::vector<double>(numTimeBins, -1);
-        binTimesAverage[bin] = std::vector<double>(numTimeBins, -1);
-        binRatioStdDev[bin]  = std::vector<double>(numTimeBins, -1);
-        binTimesStdDev[bin]  = std::vector<double>(numTimeBins, -1);
-    }
-
-    // Split our vectors of pairs into vectors of vectors of pairs based on the bin limits
-    std::vector<std::vector<std::vector<std::pair<double, double>>>> splitBinData =
-        splitVectorsWithLimits(binData, timeBinLimits);
-
-    for (size_t bin = 0; bin < NUM_BINS; ++bin) {
-        for (size_t i = 0; i < numTimeBins; ++i) {
-            // Create vectors for time and ratio in this phase space and time bin
-            std::vector<double> ratios;
-            std::vector<double> times;
-            vectorOfPairs2vectors(ratios, times, splitBinData[bin][i]);
-
-            binRatioAverage[bin][i] = vectorAvg(ratios);
-            binTimesAverage[bin][i] = vectorAvg(times);
-
-            binRatioStdDev[bin][i] = vectorStdDev(ratios);
-            binTimesStdDev[bin][i] = vectorStdDev(times);
-        }
-    }
-}
- */
-
-/*
  * Bin the CF and Mixed decays modelled in an AmpGen generated inputFile into phase bins as defined by $BIN_LIMITS
  *
  * This function is far too long but i think its probably ok for now

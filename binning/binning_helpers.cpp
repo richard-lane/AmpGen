@@ -104,45 +104,6 @@ std::vector<std::vector<double>> splitVectorWithLimits(std::vector<double> &myVe
 }
 
 /*
- * Given a vector of vectors of pairs, split it into a vector of vectors of vectors of pairs.
- * Each vector is split based on the second element in the pair according to binLimits.
- *
- * Each subvector should be sorted in order of increasing second pair element.
- */
-std::vector<std::vector<std::vector<std::pair<double, double>>>>
-splitVectorsWithLimits(const std::vector<std::vector<std::pair<double, double>>> &myVectors,
-                       std::vector<double>                                        binLimits)
-{
-    // Bin limits should be sorted
-    if (!std::is_sorted(binLimits.begin(), binLimits.end())) {
-        std::cout << "Bad time bin limits; should be sorted" << std::endl;
-        throw;
-    }
-
-    // Bins for values up to binLimits[0], values between two limits and values >binLimits[N]
-    size_t numBins = binLimits.size() + 1;
-
-    // Create our vector of vectors of vectors of pairs
-    size_t                                                           numVectors = myVectors.size();
-    std::vector<std::vector<std::vector<std::pair<double, double>>>> splitVectors(
-        numVectors, std::vector<std::vector<std::pair<double, double>>>(numBins));
-
-    // In each bin, fill in our vector of vectors according to the bin limits
-    for (size_t bin = 0; bin < numVectors; ++bin) {
-        size_t currentTimeBin = 0;
-        for (size_t i = 0; i < myVectors[bin].size(); ++i) {
-            // If this time is more than the bin limit, we want to put subsequent points in a higher bin
-            // Unless we are already putting points in the highest bin
-            while (myVectors[bin][i].second > binLimits[currentTimeBin] && currentTimeBin < numBins - 1) {
-                currentTimeBin += 1;
-            }
-            splitVectors[bin][currentTimeBin].push_back(myVectors[bin][i]);
-        }
-    }
-    return splitVectors;
-}
-
-/*
  * Given a vector of vector of pairs, sort each vector of pairs into ascending order based on the second element in the
  * pair.
  *
