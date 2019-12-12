@@ -8,7 +8,7 @@
 #include <vector>
 
 #include "TCanvas.h"
-#include "TH1D.h"
+#include "TGraphErrors.h"
 
 #include "DataSetsRatio.h"
 
@@ -121,13 +121,19 @@ void DataSetsRatio::_setBinRatioErrors()
  */
 void DataSetsRatio::plotBinRatios()
 {
-    TCanvas *c      = new TCanvas();
-    TH1D *   MyHist = new TH1D("", "Ratios", numBins, binLimits.data());
+    TCanvas *c = new TCanvas();
+
+    std::vector<double> timeBinCentres(numBins);
+    std::vector<double> zeros(numBins, 0);
 
     for (size_t i = 0; i < numBins; ++i) {
-        MyHist->SetBinContent(i, binRatios[i]);
+        timeBinCentres[i] = 0.5 * (binLimits[i] + binLimits[i + 1]);
     }
-    MyHist->Draw();
+
+    TGraphErrors *myGraph =
+        new TGraphErrors(numBins, timeBinCentres.data(), binRatios.data(), zeros.data(), binRatioErrors.data());
+
+    myGraph->Draw("*ap");
 }
 
 #endif // DATA_SETS_RATIO_CPP
