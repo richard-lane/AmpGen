@@ -7,6 +7,7 @@
 
 #include "TCanvas.h"
 #include "TFile.h"
+#include "TH1D.h"
 #include "k3pi_binning.h"
 
 /*
@@ -135,14 +136,28 @@ void D2K3PiData::sortBinnedTimes()
 
 /*
  * Set time bins
+ *
  * This is a vector containing every edge of the bins, from the left edge of the lowest bin to the right edge of the
  * highest.
+ *
+ * At the moment, it isn't very intelligent; we should ideally have larger bins at larger times, have granularity such
+ * that we have many bins but still many points in each bin etc.
  */
 void D2K3PiData::setTimeBins()
 {
+    // Find the largest time in any of our bins
+    double maxValue{0};
+    for (auto it = binnedTimes.begin(); it != binnedTimes.end(); ++it) {
+        for (auto it2 = it->begin(); it2 != it->end(); ++it2) {
+            if (*it2 > maxValue) {
+                maxValue = *it2;
+            }
+        }
+    }
 
-    for (double i = 0; i < 341; ++i) {
-        timeBinLimits.push_back(i / 100000);
+    maxValue *= 1.1;
+    for (double i = 0; i < 201; ++i) {
+        timeBinLimits.push_back(maxValue * i / 201);
     }
 }
 
