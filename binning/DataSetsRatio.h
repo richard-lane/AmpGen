@@ -12,20 +12,20 @@
 class DataSetsRatio
 {
   public:
-    explicit DataSetsRatio(std::vector<double> numeratorBinLimits,
-                           std::vector<size_t> numeratorData,
-                           std::vector<double> denominatorBinLimits,
-                           std::vector<size_t> denominatorData);
+    explicit DataSetsRatio(std::vector<double> &myNumeratorBinLimits,
+                           std::vector<size_t> &myNumeratorData,
+                           std::vector<double> &myDenominatorBinLimits,
+                           std::vector<size_t> &myDenominatorData);
 
     void _setBinRatios(std::vector<size_t> numeratorData, std::vector<size_t> denominatorData);
 
   private:
-    void verifyInputs(std::vector<double> numeratorBinLimits,
-                      std::vector<size_t> numeratorData,
-                      std::vector<double> denominatorBinLimits,
-                      std::vector<size_t> denominatorData);
-    void _setBinLimits(std::vector<double> myBinLimits);
-    void _setData();
+    void verifyInputs(std::vector<double> &myNumeratorBinLimits,
+                      std::vector<size_t> &myNumeratorData,
+                      std::vector<double> &myDenominatorBinLimits,
+                      std::vector<size_t> &myDenominatorData);
+
+    size_t numBins{0};
 
     std::vector<size_t> numeratorData{};
     std::vector<size_t> denominatorData{};
