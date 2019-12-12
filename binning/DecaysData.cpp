@@ -157,7 +157,7 @@ void D2K3PiData::setTimeBins()
 
     maxValue *= 1.1;
     for (double i = 0; i < 201; ++i) {
-        timeBinLimits.push_back(maxValue * i / 201);
+        timeBinLimits.push_back(maxValue * i * i / 40401);
     }
 }
 
