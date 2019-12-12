@@ -47,11 +47,13 @@ void bin_generated_decays(TFile *mixedDecays, TFile *favouredDecays)
     //    FavouredData.plotBinnedTimes(bin);
     //}
 
-    // Create a DataSetsRatio object two compare our two datasets
-    // For now just look at the first bin
-    DataSetsRatio DataSets = DataSetsRatio(MixedData.timeBinLimits,
-                                           MixedData.numPointsPerTimeBin[0],
-                                           FavouredData.timeBinLimits,
-                                           FavouredData.numPointsPerTimeBin[0]);
-    DataSets._setBinRatios();
+    // Create a vector of DataSetsRatio objects to compare our two datasets
+    std::vector<DataSetsRatio> dataSetRatios{};
+    for (int bin = 0; bin < NUM_BINS; bin++) {
+        dataSetRatios.push_back(DataSetsRatio(MixedData.timeBinLimits,
+                                              MixedData.numPointsPerTimeBin[bin],
+                                              FavouredData.timeBinLimits,
+                                              FavouredData.numPointsPerTimeBin[bin]));
+        dataSetRatios[bin]._setBinRatios();
+    }
 }
