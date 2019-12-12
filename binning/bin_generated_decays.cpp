@@ -7,12 +7,7 @@
  * This script contains no error handling, arg verification or anything to make it work nicely
  */
 
-#include <algorithm>
-#include <complex>
-#include <cstring>
-#include <fstream>
 #include <iostream>
-#include <string>
 #include <vector>
 
 #include "TFile.h"
