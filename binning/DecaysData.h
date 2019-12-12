@@ -61,6 +61,7 @@ class D2K3PiData : public DecaysData
     void splitTimes();
     void setNumPointsPerTimeBin();
     void plotBinnedTimes(size_t bin);
+    void performBinning(std::string timesBranchName);
 
     // Particle data
     std::vector<double>         decayTimes{};

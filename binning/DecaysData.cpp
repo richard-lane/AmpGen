@@ -238,4 +238,31 @@ void D2K3PiData::plotBinnedTimes(size_t bin)
     MyHist->Draw();
 }
 
+/*
+ * Bin events into predefined phase space bins; within each phase space bin, sort the events' decay times into time bins
+ * and count how many events are in each time bin.
+ */
+void D2K3PiData::performBinning(std::string timesBranchName)
+{
+    // Read the data from our ROOT file into this class
+    populate(timesBranchName);
+
+    // Perform phase-space binning; binned times will be set in the attributes .binnedTimes
+    binTimes();
+
+    // Output how many points are in each bin
+    for (size_t bin = 0; bin < NUM_BINS; ++bin) {
+        std::cout << "points in bin " << bin << ": " << binnedTimes[bin].size() << std::endl;
+    }
+
+    // Sort the data in each bin in increasing time order and bin the times based on time bins defined in
+    // D2K3PiData.setTimeBins()
+    sortBinnedTimes();
+    setTimeBins();
+    splitTimes();
+
+    // Find how many points there are in each time bin
+    setNumPointsPerTimeBin();
+}
+
 #endif // DECAYSDATA_CPP
