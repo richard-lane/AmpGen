@@ -14,6 +14,8 @@
 #include "TH1D.h"
 #include "TRandom.h"
 
+#include "DataSetsRatio.cpp"
+#include "DataSetsRatio.h"
 #include "DecaysData.cpp"
 #include "DecaysData.h"
 #include "plottingHelpers.cpp"
@@ -40,8 +42,16 @@ void bin_generated_decays(TFile *mixedDecays, TFile *favouredDecays)
     // plot_things(FavouredData.kVectors, FavouredData.pi1Vectors, FavouredData.pi2Vectors);
 
     // Plot the hist of times in each bin
-    for (size_t bin = 0; bin < NUM_BINS; bin++) {
-        MixedData.plotBinnedTimes(bin);
-        FavouredData.plotBinnedTimes(bin);
-    }
+    // for (size_t bin = 0; bin < NUM_BINS; bin++) {
+    //    MixedData.plotBinnedTimes(bin);
+    //    FavouredData.plotBinnedTimes(bin);
+    //}
+
+    // Create a DataSetsRatio object two compare our two datasets
+    // For now just look at the first bin
+    DataSetsRatio DataSets = DataSetsRatio(MixedData.timeBinLimits,
+                                           MixedData.numPointsPerTimeBin[0],
+                                           FavouredData.timeBinLimits,
+                                           FavouredData.numPointsPerTimeBin[0]);
+    DataSets._setBinRatios();
 }

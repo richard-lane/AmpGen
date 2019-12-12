@@ -145,17 +145,7 @@ void D2K3PiData::sortBinnedTimes()
  */
 void D2K3PiData::setTimeBins()
 {
-    // Find the largest time in any of our bins
-    double maxValue{0};
-    for (auto it = binnedTimes.begin(); it != binnedTimes.end(); ++it) {
-        for (auto it2 = it->begin(); it2 != it->end(); ++it2) {
-            if (*it2 > maxValue) {
-                maxValue = *it2;
-            }
-        }
-    }
-
-    maxValue *= 1.1;
+    double maxValue{0.006};
     for (double i = 0; i < 201; ++i) {
         timeBinLimits.push_back(maxValue * i * i / 40401);
     }

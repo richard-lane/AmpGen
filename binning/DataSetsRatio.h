@@ -17,7 +17,7 @@ class DataSetsRatio
                            std::vector<double> &myDenominatorBinLimits,
                            std::vector<size_t> &myDenominatorData);
 
-    void _setBinRatios(std::vector<size_t> numeratorData, std::vector<size_t> denominatorData);
+    void _setBinRatios();
 
   private:
     void verifyInputs(std::vector<double> &myNumeratorBinLimits,

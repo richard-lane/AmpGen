@@ -1,6 +1,8 @@
 #ifndef DATA_SETS_RATIO_CPP
 #define DATA_SETS_RATIO_CPP
 
+#include <algorithm>
+#include <functional>
 #include <iostream>
 #include <vector>
 
@@ -31,7 +33,7 @@ void DataSetsRatio::verifyInputs(std::vector<double> &myNumeratorBinLimits,
                                  std::vector<size_t> &myDenominatorData)
 {
     // Check that bin limits are the same for both data sets
-    // Using == to compare doubles..?
+    // Using == to compare doubles?
     if (myNumeratorBinLimits != myDenominatorBinLimits) {
         std::cerr << "Cannot compare two datasets with different bin limits" << std::endl;
         throw;
@@ -46,6 +48,22 @@ void DataSetsRatio::verifyInputs(std::vector<double> &myNumeratorBinLimits,
         std::cerr << "Incompatible bins and datasets provided; must have the same number of bins and datapoints"
                   << std::endl;
         throw;
+    }
+}
+
+/*
+ * Set the ratio of our numerator and denominator's points in each bin
+ */
+void DataSetsRatio::_setBinRatios()
+{
+    std::vector<double> test1{0.3, 0.3, 0.3, 0.3, 0.5};
+    std::vector<double> test2{0.2, 0.4, 0.6, 0.8, 1.0};
+    std::vector<double> ans(5);
+
+    std::transform(test1.begin(), test1.end(), test2.begin(), ans.begin(), std::divides<double>());
+
+    for (auto it = ans.begin(); it != ans.end(); ++it) {
+        std::cout << *it << std::endl;
     }
 }
 
