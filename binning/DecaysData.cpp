@@ -21,7 +21,9 @@ DecaysData::DecaysData(TFile *myTFile, std::string treeName)
 
 /*
  * Write the data on branchName to the index'th position of each TLorentzVector in myVector.
- * e.g. to write x-momenta of a particle described by ROOT branch foo_Px, call saveBranchToVector("foo_Px", myVector, 0)
+ *
+ * e.g. to write x-momenta of a particle described by ROOT branch foo_Px, call writeBranchToLorentzVectors("foo_Px",
+ * myVector, 0)
  *
  * The TLorentzVector should be of the form (Px, Py, Pz, E).
  */
@@ -32,7 +34,7 @@ void DecaysData::writeBranchToLorentzVectors(const std::string &          branch
     double myData{0.0};
 
     myTree->SetBranchAddress(branchName.c_str(), &myData);
-    for (Long64_t i = 0; i < myTree->GetEntries(); ++i) {
+    for (size_t i = 0; i < numEvents; ++i) {
         myTree->GetEntry(i);
         myVector[i][index] = myData;
     }
@@ -44,6 +46,7 @@ void DecaysData::writeBranchToLorentzVectors(const std::string &          branch
 
 /*
  * Write the data for a given particle to a vector of TLorentzVectors
+ * Relies on particle data being represented by a branch named branchName = "_Px" etc.
  *
  */
 const std::vector<TLorentzVector> DecaysData::particleData(std::string particleName)
@@ -59,18 +62,19 @@ const std::vector<TLorentzVector> DecaysData::particleData(std::string particleN
 }
 
 /*
- * Set decay times on a branch
- * timesBranchName might be set to e.g. "D_decayTime"
+ * Set decay times on a ROOT file branch
+ * timesBranchName might be set to e.g. "D_decayTime" for the decay of a D meson
  *
  */
 void D2K3PiData::setDecayTimes(std::string timesBranchName)
 {
 
+    // Init our decay times to -1; it should then be obvious if something has gone wrong.
     double myData{0.0};
     decayTimes = std::vector<double>(numEvents, -1);
 
     myTree->SetBranchAddress(timesBranchName.c_str(), &myData);
-    for (Long64_t i = 0; i < myTree->GetEntries(); ++i) {
+    for (size_t i = 0; i < numEvents; ++i) {
         myTree->GetEntry(i);
         decayTimes[i] = myData;
     }
@@ -131,6 +135,8 @@ void D2K3PiData::sortBinnedTimes()
 
 /*
  * Set time bins
+ * This is a vector containing every edge of the bins, from the left edge of the lowest bin to the right edge of the
+ * highest.
  */
 void D2K3PiData::setTimeBins()
 {

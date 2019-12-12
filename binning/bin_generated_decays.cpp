@@ -50,7 +50,7 @@ void bin_generated_decays(TFile *mixedDecays, TFile *favouredDecays)
     // Make some plots to check that the data from ROOT has been read in correctly
     // plot_things(MixedData.kVectors, MixedData.pi1Vectors, MixedData.pi2Vectors);
 
-    // Perform binning; binned times will be set in MixedData.binnedTimes
+    // Perform binning; binned times will be set in the attributes .binnedTimes
     MixedData.binTimes();
     FavouredData.binTimes();
 
