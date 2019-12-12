@@ -52,18 +52,29 @@ void DataSetsRatio::verifyInputs(std::vector<double> &myNumeratorBinLimits,
 }
 
 /*
+ * Divide two doubles, returning 0 if either the numerator or denominator are zero
+ */
+double DataSetsRatio::safeDivide(const double num, const double denom)
+{
+    if (num == 0 || denom == 0) {
+        return 0;
+    }
+    return num / denom;
+}
+
+/*
  * Set the ratio of our numerator and denominator's points in each bin
  */
 void DataSetsRatio::_setBinRatios()
 {
-    std::vector<double> test1{0.3, 0.3, 0.3, 0.3, 0.5};
-    std::vector<double> test2{0.2, 0.4, 0.6, 0.8, 1.0};
-    std::vector<double> ans(5);
+    // Reassign our vector of ratios to -1
+    binRatios.assign(numBins, -1);
+    binRatios.shrink_to_fit();
 
-    std::transform(test1.begin(), test1.end(), test2.begin(), ans.begin(), std::divides<double>());
-
-    for (auto it = ans.begin(); it != ans.end(); ++it) {
-        std::cout << *it << std::endl;
+    // Unintelligently divide our elements
+    // A good implementation would use std::transform but this is fine
+    for (size_t i = 0; i < binRatios.size(); ++i) {
+        binRatios[i] = safeDivide(numeratorData[i], denominatorData[i]);
     }
 }
 

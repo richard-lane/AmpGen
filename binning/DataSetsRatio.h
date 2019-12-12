@@ -19,18 +19,20 @@ class DataSetsRatio
 
     void _setBinRatios();
 
+    std::vector<double> binRatios{};
+
   private:
-    void verifyInputs(std::vector<double> &myNumeratorBinLimits,
-                      std::vector<size_t> &myNumeratorData,
-                      std::vector<double> &myDenominatorBinLimits,
-                      std::vector<size_t> &myDenominatorData);
+    void   verifyInputs(std::vector<double> &myNumeratorBinLimits,
+                        std::vector<size_t> &myNumeratorData,
+                        std::vector<double> &myDenominatorBinLimits,
+                        std::vector<size_t> &myDenominatorData);
+    double safeDivide(const double num, const double denom);
 
     size_t numBins{0};
 
     std::vector<size_t> numeratorData{};
     std::vector<size_t> denominatorData{};
     std::vector<double> binLimits{};
-    std::vector<double> binRatios{};
 };
 
 #endif // DATA_SETS_RATIO_HPP
