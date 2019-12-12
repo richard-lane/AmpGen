@@ -100,7 +100,9 @@ double DataSetsRatio::ratioError(const double &ratio, const size_t &numeratorCou
     }
 
     // Otherwise our ratio is found by assuming delta(Counts) = sqrt(Counts)
-    return std::sqrt((numeratorCounts + denominatorCounts) / (numeratorCounts * denominatorCounts)) * ratio;
+    return std::sqrt(((double)numeratorCounts + (double)denominatorCounts) /
+                     ((double)numeratorCounts * (double)denominatorCounts)) *
+           ratio;
 }
 
 /*
