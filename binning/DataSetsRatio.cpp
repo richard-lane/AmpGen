@@ -2,6 +2,7 @@
 #define DATA_SETS_RATIO_CPP
 
 #include <algorithm>
+#include <cmath>
 #include <functional>
 #include <iostream>
 #include <vector>
@@ -80,12 +81,44 @@ void DataSetsRatio::_setBinRatios()
     for (size_t i = 0; i < binRatios.size(); ++i) {
         binRatios[i] = safeDivide(numeratorData[i], denominatorData[i]);
     }
+
+    // Find also the errors in our ratios.
+    _setBinRatioErrors();
+}
+
+/*
+ * Assuming the error in our counts is sqrt(count) and that the fractional error in a ratio is given by adding count
+ * errors in quadrature, find the error in a ratio.
+ *
+ * Sets errors for ratio=0 to 0
+ */
+double DataSetsRatio::ratioError(const double &ratio, const size_t &numeratorCounts, const size_t &denominatorCounts)
+{
+    // If our ratio is zero, our error should also be
+    if (ratio == 0) {
+        return 0;
+    }
+
+    // Otherwise our ratio is found by assuming delta(Counts) = sqrt(Counts)
+    return std::sqrt((numeratorCounts + denominatorCounts) / (numeratorCounts * denominatorCounts)) * ratio;
+}
+
+/*
+ * Set the values of binRatioErrors
+ */
+void DataSetsRatio::_setBinRatioErrors()
+{
+    binRatioErrors.assign(numBins, 0);
+    binRatioErrors.shrink_to_fit();
+
+    for (size_t i = 0; i < numBins; ++i) {
+        binRatioErrors[i] = ratioError(binRatios[i], numeratorData[i], denominatorData[i]);
+    }
 }
 
 /*
  * Plot the ratios of numerator to denominator points in each bin
  */
-
 void DataSetsRatio::plotBinRatios()
 {
     TCanvas *c      = new TCanvas();
