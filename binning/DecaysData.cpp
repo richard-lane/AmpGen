@@ -146,8 +146,9 @@ void D2K3PiData::sortBinnedTimes()
 void D2K3PiData::setTimeBins()
 {
     double maxValue{0.006};
-    for (double i = 0; i < 201; ++i) {
-        timeBinLimits.push_back(maxValue * i * i / 40401);
+    size_t n = 201;
+    for (double i = 0; i < n; ++i) {
+        timeBinLimits.push_back(maxValue * i * i / (n * n));
     }
 }
 

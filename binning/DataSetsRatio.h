@@ -18,6 +18,7 @@ class DataSetsRatio
                            std::vector<size_t> &myDenominatorData);
 
     void _setBinRatios();
+    void plotBinRatios();
 
     std::vector<double> binRatios{};
 

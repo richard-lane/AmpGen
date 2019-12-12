@@ -55,5 +55,6 @@ void bin_generated_decays(TFile *mixedDecays, TFile *favouredDecays)
                                               FavouredData.timeBinLimits,
                                               FavouredData.numPointsPerTimeBin[bin]));
         dataSetRatios[bin]._setBinRatios();
+        dataSetRatios[bin].plotBinRatios();
     }
 }

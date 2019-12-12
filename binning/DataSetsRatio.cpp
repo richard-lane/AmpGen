@@ -6,6 +6,9 @@
 #include <iostream>
 #include <vector>
 
+#include "TCanvas.h"
+#include "TH1D.h"
+
 #include "DataSetsRatio.h"
 
 DataSetsRatio::DataSetsRatio(std::vector<double> &myNumeratorBinLimits,
@@ -64,6 +67,7 @@ double DataSetsRatio::safeDivide(const double num, const double denom)
 
 /*
  * Set the ratio of our numerator and denominator's points in each bin
+ * The safeDivide function sets the ratio to 0 if either the numerator or denominator are zero
  */
 void DataSetsRatio::_setBinRatios()
 {
@@ -76,6 +80,21 @@ void DataSetsRatio::_setBinRatios()
     for (size_t i = 0; i < binRatios.size(); ++i) {
         binRatios[i] = safeDivide(numeratorData[i], denominatorData[i]);
     }
+}
+
+/*
+ * Plot the ratios of numerator to denominator points in each bin
+ */
+
+void DataSetsRatio::plotBinRatios()
+{
+    TCanvas *c      = new TCanvas();
+    TH1D *   MyHist = new TH1D("", "Ratios", numBins, binLimits.data());
+
+    for (size_t i = 0; i < numBins; ++i) {
+        MyHist->SetBinContent(i, binRatios[i]);
+    }
+    MyHist->Draw();
 }
 
 #endif // DATA_SETS_RATIO_CPP
