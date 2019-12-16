@@ -9,6 +9,10 @@
 FitRatio::FitRatio(std::vector<double> &binLimits, std::vector<double> &ratioData, std::vector<double> &ratioErrors)
 {
     verifyInputs(binLimits, ratioData, ratioErrors);
+
+    ratioData   = ratioData;
+    ratioErrors = ratioErrors;
+    binLimits   = binLimits;
 }
 
 void FitRatio::verifyInputs(std::vector<double> &binLimits,
