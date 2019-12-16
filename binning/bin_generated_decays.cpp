@@ -54,9 +54,9 @@ void bin_generated_decays(TFile *mixedDecays, TFile *favouredDecays)
                                               MixedData.numPointsPerTimeBin[bin],
                                               FavouredData.timeBinLimits,
                                               FavouredData.numPointsPerTimeBin[bin]));
-        dataSetRatios[bin]._setBinRatios();
+        //dataSetRatios[bin]._setBinRatios();
 
         // Boolean arg tells us whether to draw the graphs (useful for debugging) or to just fit the data
-        dataSetRatios[bin].fitToData(false);
+        //dataSetRatios[bin].fitToData(false);
     }
 }
