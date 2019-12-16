@@ -120,6 +120,8 @@ void D2K3PiData::binTimes(void)
 
         // Log the time of the event in this bin
         // This might be slow because it's dynamically resizing the vector, but should be ok for our purposes.
+        // @@@ A marginally cleverer implementation might set binnedTimes[bin] to the number of points we have, and then
+        // just reshape the whole thing once we've finished binning.
         binnedTimes[bin].push_back(decayTimes[i]);
     }
 }
