@@ -76,7 +76,7 @@ void DataSetsRatio::_setBinRatios()
     for (size_t i = 0; i < numBins; ++i) {
         binRatios[i]  = (double)numeratorData[i] / (double)denominatorData[i];
         binCentres[i] = 0.5 * (binLimits[i] + binLimits[i + 1]);
-        binErrors[i]  = 0.5 * (binLimits[i] - binLimits[i + 1]);
+        binErrors[i]  = 0.5 * (binLimits[i + 1] - binLimits[i]);
     }
 
     // Find also the errors in our ratios.
