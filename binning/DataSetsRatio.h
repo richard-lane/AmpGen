@@ -31,6 +31,7 @@ class DataSetsRatio
                         std::vector<size_t> &myNumeratorData,
                         std::vector<double> &myDenominatorBinLimits,
                         std::vector<size_t> &myDenominatorData);
+    double safeDivide(const double num, const double denom);
     void   _setBinRatioErrors();
     void   plotBinRatios();
 
