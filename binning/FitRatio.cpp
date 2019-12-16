@@ -15,6 +15,10 @@ FitRatio::FitRatio(std::vector<double> &binLimits, std::vector<double> &ratioDat
     binLimits   = binLimits;
 }
 
+/*
+ * Check that we have the right number of bins, data points and errors
+ * BinLimits is a vector of the left edge of each bin plus the rightmost edge of the highest bin
+ */
 void FitRatio::verifyInputs(std::vector<double> &binLimits,
                             std::vector<double> &ratioData,
                             std::vector<double> &ratioErrors)
