@@ -57,6 +57,7 @@ void bin_generated_decays(TFile *mixedDecays, TFile *favouredDecays)
         dataSetRatios[bin]._setBinRatios();
 
         // Boolean arg tells us whether to draw the graphs (useful for debugging) or to just fit the data
-        dataSetRatios[bin].fitToData(true);
+        std::string title = "Phase Space Bin " + std::to_string(bin);
+        dataSetRatios[bin].fitToData(true, title);
     }
 }

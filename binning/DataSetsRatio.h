@@ -20,7 +20,7 @@ class DataSetsRatio
                            std::vector<size_t> &myDenominatorData);
 
     void _setBinRatios();
-    void fitToData(bool draw);
+    void fitToData(bool draw, std::string plotTitle);
 
     std::vector<double> binRatios{};
     std::vector<double> binRatioErrors{};
@@ -41,6 +41,10 @@ class DataSetsRatio
     TGraph *_ratioPlot = nullptr;
 
     size_t numBins{0};
+
+    // Once we remove any bins that have inf/NaN/zeroes in their data, our number of data points will be smaller than
+    // the number of bins.
+    size_t numPoints{0};
 
     std::vector<size_t> numeratorData{};
     std::vector<size_t> denominatorData{};

@@ -83,7 +83,8 @@ void DataSetsRatio::_setBinRatios()
     _setBinRatioErrors();
 
     // Prune NaN and Inf
-    auto it = binRatios.begin();
+    numPoints = numBins;
+    auto it   = binRatios.begin();
     while (it != binRatios.end()) {
         if (!std::isfinite(*it) || *it == 0.0) {
             size_t index = it - binRatios.begin();
@@ -91,6 +92,7 @@ void DataSetsRatio::_setBinRatios()
             binErrors.erase(binErrors.begin() + index);
             binCentres.erase(binCentres.begin() + index);
             binRatioErrors.erase(binRatioErrors.begin() + index);
+            numPoints--;
         } else {
             ++it;
         }
@@ -136,7 +138,7 @@ void DataSetsRatio::_setBinRatioErrors()
 void DataSetsRatio::plotBinRatios()
 {
     _ratioPlot =
-        new TGraphErrors(binCentres.size(), binCentres.data(), binRatios.data(), binErrors.data(), binRatioErrors.data());
+        new TGraphErrors(numPoints, binCentres.data(), binRatios.data(), binErrors.data(), binRatioErrors.data());
 }
 
 /*
@@ -144,9 +146,12 @@ void DataSetsRatio::plotBinRatios()
  *
  * @param draw: whether to draw the graph or just fit to its data.
  */
-void DataSetsRatio::fitToData(bool draw)
+void DataSetsRatio::fitToData(bool draw, std::string plotTitle)
 {
+    // Create a plot for our data, giving it a custom global title and titling the x and y axes with time and ratio
     plotBinRatios();
+    _ratioPlot->SetTitle((plotTitle + ";time/ns;CF/DCS ratio").c_str());
+
     if (draw) {
         TCanvas *c = new TCanvas();
         _ratioPlot->Draw("*ap");
