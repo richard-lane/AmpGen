@@ -12,8 +12,6 @@ class FitRatio
   public:
     explicit FitRatio(std::vector<double> &binLimits, std::vector<double> &ratioData, std::vector<double> &ratioErrors);
 
-    void _setBinRatios();
-    void plotBinRatios();
     void fitRatios();
 
   private:
