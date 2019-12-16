@@ -22,6 +22,7 @@ class DataSetsRatio
 
     std::vector<double> binRatios{};
     std::vector<double> binRatioErrors{};
+    std::vector<double> binLimits{};
 
   private:
     void   verifyInputs(std::vector<double> &myNumeratorBinLimits,
@@ -37,7 +38,6 @@ class DataSetsRatio
 
     std::vector<size_t> numeratorData{};
     std::vector<size_t> denominatorData{};
-    std::vector<double> binLimits{};
 };
 
 #endif // DATA_SETS_RATIO_HPP

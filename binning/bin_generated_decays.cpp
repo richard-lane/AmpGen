@@ -18,6 +18,8 @@
 #include "DataSetsRatio.h"
 #include "DecaysData.cpp"
 #include "DecaysData.h"
+#include "FitRatio.cpp"
+#include "FitRatio.h"
 #include "plottingHelpers.cpp"
 
 /*
@@ -55,6 +57,11 @@ void bin_generated_decays(TFile *mixedDecays, TFile *favouredDecays)
                                               FavouredData.timeBinLimits,
                                               FavouredData.numPointsPerTimeBin[bin]));
         dataSetRatios[bin]._setBinRatios();
-        dataSetRatios[bin].plotBinRatios();
+        // dataSetRatios[bin].plotBinRatios();
     }
+
+    // Fit the points in the first bin
+    FitRatio FirstBinFit =
+        FitRatio(dataSetRatios[0].binLimits, dataSetRatios[0].binRatios, dataSetRatios[0].binRatioErrors);
+    FirstBinFit.fitRatios();
 }
