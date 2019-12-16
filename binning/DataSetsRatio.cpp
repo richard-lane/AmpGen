@@ -132,10 +132,11 @@ void DataSetsRatio::plotBinRatios()
         timeBinCentres[i] = 0.5 * (binLimits[i] + binLimits[i + 1]);
     }
 
-    TGraphErrors *myGraph =
+    _ratioPlot =
         new TGraphErrors(numBins, timeBinCentres.data(), binRatios.data(), zeros.data(), binRatioErrors.data());
 
-    myGraph->Draw("*ap");
+    _ratioPlot->Draw("*ap");
+    _ratioPlot->Fit("pol1");
 }
 
 #endif // DATA_SETS_RATIO_CPP

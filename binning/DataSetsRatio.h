@@ -3,6 +3,8 @@
 
 #include <vector>
 
+#include "TGraph.h"
+
 /*
  * Class for calculating and representing the ratio of two binned datasets
  *
@@ -33,6 +35,8 @@ class DataSetsRatio
     void   _setBinRatioErrors();
 
     double ratioError(const double &ratio, const size_t &numeratorCounts, const size_t &denominatorCounts);
+
+    TGraph *_ratioPlot = nullptr;
 
     size_t numBins{0};
 
