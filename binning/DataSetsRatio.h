@@ -20,7 +20,7 @@ class DataSetsRatio
                            std::vector<size_t> &myDenominatorData);
 
     void _setBinRatios();
-    void plotBinRatios();
+    void fitToData(bool draw);
 
     std::vector<double> binRatios{};
     std::vector<double> binRatioErrors{};
@@ -33,6 +33,7 @@ class DataSetsRatio
                         std::vector<size_t> &myDenominatorData);
     double safeDivide(const double num, const double denom);
     void   _setBinRatioErrors();
+    void   plotBinRatios();
 
     double ratioError(const double &ratio, const size_t &numeratorCounts, const size_t &denominatorCounts);
 

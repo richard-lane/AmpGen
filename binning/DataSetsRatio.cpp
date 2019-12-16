@@ -120,11 +120,10 @@ void DataSetsRatio::_setBinRatioErrors()
 
 /*
  * Plot the ratios of numerator to denominator points in each bin
+ * Doesn't actually draw the plot but assigns _ratioPlot to a new TGraphErrors object
  */
 void DataSetsRatio::plotBinRatios()
 {
-    TCanvas *c = new TCanvas();
-
     std::vector<double> timeBinCentres(numBins);
     std::vector<double> zeros(numBins, 0);
 
@@ -134,8 +133,20 @@ void DataSetsRatio::plotBinRatios()
 
     _ratioPlot =
         new TGraphErrors(numBins, timeBinCentres.data(), binRatios.data(), zeros.data(), binRatioErrors.data());
+}
 
-    _ratioPlot->Draw("*ap");
+/*
+ * Fit a second order polynomial to a plot of ratios in each bin
+ *
+ * @param draw: whether to draw the graph or just fit to its data.
+ */
+void DataSetsRatio::fitToData(bool draw)
+{
+    plotBinRatios();
+    if (draw) {
+        TCanvas *c = new TCanvas();
+        _ratioPlot->Draw("*ap");
+    }
     _ratioPlot->Fit("pol1");
 }
 
