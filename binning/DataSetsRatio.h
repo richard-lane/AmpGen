@@ -25,6 +25,8 @@ class DataSetsRatio
     std::vector<double> binRatios{};
     std::vector<double> binRatioErrors{};
     std::vector<double> binLimits{};
+    std::vector<double> binCentres{};
+    std::vector<double> binErrors{};
 
   private:
     void verifyInputs(std::vector<double> &myNumeratorBinLimits,

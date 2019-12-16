@@ -65,14 +65,36 @@ void DataSetsRatio::_setBinRatios()
     binRatios.assign(numBins, -1);
     binRatios.shrink_to_fit();
 
+    // Set the bin ratios and centres
+    binCentres.assign(numBins, -1);
+    binErrors.assign(numBins, -1);
+    binCentres.shrink_to_fit();
+    binCentres.shrink_to_fit();
+
     // Unintelligently divide our elements
     // A good implementation would use std::transform but this is fine
-    for (size_t i = 0; i < binRatios.size(); ++i) {
-        binRatios[i] = (double)numeratorData[i] / (double)denominatorData[i];
+    for (size_t i = 0; i < numBins; ++i) {
+        binRatios[i]  = (double)numeratorData[i] / (double)denominatorData[i];
+        binCentres[i] = 0.5 * (binLimits[i] + binLimits[i + 1]);
+        binErrors[i]  = 0.5 * (binLimits[i] - binLimits[i + 1]);
     }
 
     // Find also the errors in our ratios.
     _setBinRatioErrors();
+
+    // Prune NaN and Inf
+    auto it = binRatios.begin();
+    while (it != binRatios.end()) {
+        if (!std::isfinite(*it) || *it == 0.0) {
+            size_t index = it - binRatios.begin();
+            binRatios.erase(binRatios.begin() + index);
+            binErrors.erase(binErrors.begin() + index);
+            binCentres.erase(binCentres.begin() + index);
+            binRatioErrors.erase(binRatioErrors.begin() + index);
+        } else {
+            ++it;
+        }
+    }
 }
 
 /*
@@ -113,15 +135,8 @@ void DataSetsRatio::_setBinRatioErrors()
  */
 void DataSetsRatio::plotBinRatios()
 {
-    std::vector<double> timeBinCentres(numBins);
-    std::vector<double> zeros(numBins, 0);
-
-    for (size_t i = 0; i < numBins; ++i) {
-        timeBinCentres[i] = 0.5 * (binLimits[i] + binLimits[i + 1]);
-    }
-
     _ratioPlot =
-        new TGraphErrors(numBins, timeBinCentres.data(), binRatios.data(), zeros.data(), binRatioErrors.data());
+        new TGraphErrors(binCentres.size(), binCentres.data(), binRatios.data(), binErrors.data(), binRatioErrors.data());
 }
 
 /*
@@ -136,7 +151,7 @@ void DataSetsRatio::fitToData(bool draw)
         TCanvas *c = new TCanvas();
         _ratioPlot->Draw("*ap");
     }
-    _ratioPlot->Fit("pol1");
+    _ratioPlot->Fit("pol2");
 }
 
 #endif // DATA_SETS_RATIO_CPP
