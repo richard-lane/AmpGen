@@ -27,13 +27,12 @@ class DataSetsRatio
     std::vector<double> binLimits{};
 
   private:
-    void   verifyInputs(std::vector<double> &myNumeratorBinLimits,
-                        std::vector<size_t> &myNumeratorData,
-                        std::vector<double> &myDenominatorBinLimits,
-                        std::vector<size_t> &myDenominatorData);
-    double safeDivide(const double num, const double denom);
-    void   _setBinRatioErrors();
-    void   plotBinRatios();
+    void verifyInputs(std::vector<double> &myNumeratorBinLimits,
+                      std::vector<size_t> &myNumeratorData,
+                      std::vector<double> &myDenominatorBinLimits,
+                      std::vector<size_t> &myDenominatorData);
+    void _setBinRatioErrors();
+    void plotBinRatios();
 
     double ratioError(const double &ratio, const size_t &numeratorCounts, const size_t &denominatorCounts);
 
