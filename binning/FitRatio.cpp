@@ -4,6 +4,7 @@
 #include <iostream>
 #include <vector>
 
+#include "TCanvas.h"
 #include "TGraphErrors.h"
 
 #include "FitRatio.h"
@@ -43,10 +44,16 @@ void FitRatio::verifyInputs(std::vector<double> &binLimits,
 
 /*
  * Fit the ratio
+ *
+ * For now, just do a quadratic polynomial fit
  */
-void fitRatios()
+void FitRatio::fitRatios()
 {
-    ;
+    TCanvas *     c       = new TCanvas();
+    TGraphErrors *myGraph = new TGraphErrors(_numBins, timeData.data(), ratioData.data(), ratioErrors.data());
+
+    myGraph->Draw("A*");
+    myGraph->Fit("pol1");
 }
 
 #endif // FITRATIO_CPP
