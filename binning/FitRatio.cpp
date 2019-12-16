@@ -4,6 +4,8 @@
 #include <iostream>
 #include <vector>
 
+#include "TGraphErrors.h"
+
 #include "FitRatio.h"
 
 FitRatio::FitRatio(std::vector<double> &binLimits, std::vector<double> &ratioData, std::vector<double> &ratioErrors)
@@ -12,7 +14,13 @@ FitRatio::FitRatio(std::vector<double> &binLimits, std::vector<double> &ratioDat
 
     ratioData   = ratioData;
     ratioErrors = ratioErrors;
-    binLimits   = binLimits;
+
+    timeData.assign(_numBins, 0);
+    timeErrors.shrink_to_fit();
+    for (size_t i = 0; i < _numBins; ++i) {
+        timeData[i]   = 0.5 * (binLimits[i] + binLimits[i + 1]);
+        timeErrors[i] = binLimits[i + 1] - binLimits[i];
+    }
 }
 
 /*
@@ -24,13 +32,21 @@ void FitRatio::verifyInputs(std::vector<double> &binLimits,
                             std::vector<double> &ratioErrors)
 {
     // Check that we have the same number of bins, data points and errors
-    size_t numBins   = binLimits.size() - 1;
+    _numBins         = binLimits.size() - 1;
     size_t numPoints = ratioData.size();
     size_t numErrors = ratioErrors.size();
 
-    if (numBins != numPoints || numBins != numErrors) {
+    if (_numBins != numPoints || _numBins != numErrors) {
         std::cerr << "Number of bins must match number of datapoints and errors" << std::endl;
     }
+}
+
+/*
+ * Fit the ratio
+ */
+void fitRatios()
+{
+    ;
 }
 
 #endif // FITRATIO_CPP
