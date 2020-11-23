@@ -119,6 +119,11 @@ namespace AmpGen
     DECLARE_VERTEX( V_VS_D );
     DECLARE_VERTEX( V_TS_P );
     DECLARE_VERTEX( V_TS_D );
+      
+    DECLARE_VERTEX( V_VV_P );
+    DECLARE_VERTEX( V_VV_P1 );
+    DECLARE_VERTEX( V_VV_P2 );
+    DECLARE_VERTEX( V_VV_S );
 
     DECLARE_VERTEX( T_VS_D );
     DECLARE_VERTEX( T_VS_P );
@@ -138,6 +143,12 @@ namespace AmpGen
     DECLARE_VERTEX( f_Vf_P2 );
     DECLARE_VERTEX( f_Vf_P3 );
     
+    DECLARE_VERTEX( f_fS_SL );
+    DECLARE_VERTEX( f_fS_SR );
+
+    DECLARE_VERTEX( f_Vf_SL );
+    DECLARE_VERTEX( f_Vf_SR );
+
     DECLARE_VERTEX( f_Vf_D );
     DECLARE_VERTEX( f_Vf_D1 );
     
@@ -153,6 +164,8 @@ namespace AmpGen
     DECLARE_VERTEX( S_ff_S1 );
     DECLARE_VERTEX( V_ff_S );
     DECLARE_VERTEX( V_ff_S1 );  
+    DECLARE_VERTEX( V_ff_PL );  
+    DECLARE_VERTEX( V_ff_PR );  
     class Factory : public AmpGen::Factory<Vertex::Base>
     {
     public:

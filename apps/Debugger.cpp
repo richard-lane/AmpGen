@@ -20,6 +20,7 @@
 #include "AmpGen/ParticlePropertiesList.h"
 #include "AmpGen/Utilities.h"
 #include "TRandom3.h"
+#include "AmpGen/AddCPConjugate.h"
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -33,6 +34,7 @@
 #include "AmpGen/NamedParameter.h"
 #include "AmpGen/PolarisedSum.h"
 
+
 using namespace AmpGen;
 
 void invertParity( Event& event, const size_t& nParticles)
@@ -45,65 +47,21 @@ void invertParity( Event& event, const size_t& nParticles)
   }
 }
 
-void invert( MinuitParameter* param, MinuitParameterSet& mps )
-{
-  const std::string name = param->name();
-  size_t pos             = 0;
-  std::string new_name   = name; 
-  int         sgn        = 1;
-  std::string cartOrPolar = NamedParameter<std::string>("CouplingConstant::Coordinates" ,"cartesian");
-
-  if( name.find("::") != std::string::npos ){
-    pos = name.find("::");
-    auto props = AmpGen::ParticlePropertiesList::get( name.substr(0,pos), true );
-    if( props != 0 ) new_name = props->anti().name() + name.substr(pos); 
-  }
-  else { 
-    auto tokens=split(name,'_');
-    std::string reOrIm = *tokens.rbegin();
-    std::string name   = tokens[0];
-    if ( reOrIm == "Re" || reOrIm == "Im" ){
-      Particle test = Particle(name).conj();
-      if( cartOrPolar == "polar" )     sgn = reOrIm == "Re" ? test.quasiCP() : 1; 
-      if( cartOrPolar == "cartesian" ) sgn = test.quasiCP();
-      new_name = test.uniqueString() +"_"+reOrIm;
-    }
-    else if( tokens.size() == 2 ) {
-      auto props = AmpGen::ParticlePropertiesList::get( name );
-      if( props != 0  ) new_name = props->anti().name() + "_" + tokens[1]; 
-    }
-  }
-  //INFO( param->name() << " " << sgn );
-  mps.rename( param->name(), new_name );
-  if( sgn == -1 ) param->setCurrentFitVal( -1 * param->mean() );
-}
-
-
-template <class MatrixElements> void print( const Event& event, const MatrixElements& matrixElements, bool verbose )
-{
-  for ( auto& mE : matrixElements ) {
-    INFO( mE.decayDescriptor() << " " << mE.coupling() );
-    if ( verbose ) {
-      for ( auto& term : mE.coupling ) {
-        INFO( "--> " << term.particle().decayDescriptor()  << " = "  << term()  );
-      }
-      mE.amp.debug( event.address() );
-    }
-  }
-}
-
 template < class FCN > void debug( FCN& sig, EventList& accepted, bool verbose, TRandom3* rndm, MinuitParameterSet& mps ){
   INFO("Debugging: ");
+  unsigned eventToDebug = 0;
   sig.setEvents( accepted );
   sig.prepare();
-  sig.debug( accepted[0] );
-  accepted[0].print();
-  if( verbose ) print( accepted[0], sig.matrixElements(), verbose ); 
-  invertParity(accepted[0], accepted.eventType().size() );
-  accepted[0].print();
+  sig.debug( accepted[eventToDebug] );
+  accepted[eventToDebug].print();
+//  if( verbose ) print( accepted[0], sig.matrixElements(), verbose ); 
+  for( unsigned int i = 0 ; i != accepted.size(); ++i ) 
+  invertParity(accepted[i], accepted.eventType().size() );
+  accepted[eventToDebug].print();
   sig.reset();
+  sig.setEvents(accepted);
   sig.prepare();
-  sig.debug( accepted[0] );
+  sig.debug( accepted[eventToDebug] );
 }
 
 int main( int argc, char** argv )
@@ -122,9 +80,11 @@ int main( int argc, char** argv )
   AmpGen::MinuitParameterSet MPS;
   MPS.loadFromStream();
 
-  if ( NamedParameter<bool>( "conj", false ) == true ) {
-    eventType = eventType.conj(false);
-    for ( auto& param : MPS ) invert( param, MPS );
+  if ( NamedParameter<bool>( "conj", false ) == true ) 
+  {
+    eventType = eventType.conj();
+    INFO( eventType );
+    AddCPConjugate(MPS);
   }
   INFO( "EventType = " << eventType );
   
@@ -132,13 +92,17 @@ int main( int argc, char** argv )
   EventList accepted = infile == "" ? EventList( eventType ) : EventList( infile, eventType );
   
   std::string input_units = NamedParameter<std::string>("Units","GeV");
-  if( input_units == "MeV" && infile != "") accepted.transform([](auto& event){ for( int i = 0;i<16;++i) event[i]/=1000; } );
+  if( input_units == "MeV" && infile != "") accepted.transform([](auto& event){ for( unsigned i = 0;i< event.size();++i) event[i]/=1000; } );
   if( infile == "" ){
-    Event evt = PhaseSpace( eventType, rndm ).makeEvent();
-    accepted.push_back(evt);
+    for( unsigned i = 0 ; i != 16; ++i ){
+      Event evt = PhaseSpace( eventType, rndm ).makeEvent();
+      evt.setIndex(i);
+      accepted.push_back(evt);
+    }
   }
-  accepted[0].print();
-
+  std::vector<double> event = NamedParameter<double>("Event",0).getVector();
+  if( event.size() != 1 ) accepted[0].set( event.data() );
+  
   std::string type = NamedParameter<std::string>("Type","CoherentSum");
 
   if( type == "PolarisedSum")
@@ -154,7 +118,7 @@ int main( int argc, char** argv )
   {
     CoherentSum sig(eventType, MPS);
     debug(sig, accepted, verbose, rndm, MPS);
-    print(accepted[0], sig.matrixElements() , false);
+    // print(accepted[0], sig.matrixElements() , false);
     INFO( "A(x) = " << sig.getValNoCache( accepted[0] ) );
   }
   else {

@@ -36,33 +36,41 @@ namespace AmpGen {
       {
         auto it = m_cacheFunctions.find(name);
         if( it != m_cacheFunctions.end() ) return it->second->address();
-        auto cacheFunction = std::make_shared<TYPE>(m_nParameters, args... );
+        auto cacheFunction = std::make_shared<TYPE>(m_nParameters, name, args... );
         m_cacheFunctions[name] = cacheFunction;
         m_nParameters += cacheFunction->size();
         return m_nParameters - cacheFunction->size();
       }
       size_t nParams() const { return m_nParameters ; }       
       bool enableCuda() const { return m_enable_cuda ; }
+      bool enableAVX()  const { return m_enable_avx; }
       bool enableCompileConstants() const { return m_enable_compileTimeConstants ;} 
+      void setEnableAVX(){ m_enable_avx = true ; }
       std::map<std::string, std::shared_ptr<CacheTransfer>> cacheFunctions() const;
       void addResolvedParameter(const IExpression* param, const std::string& thing);
       void addResolvedParameter(const IExpression* param, const size_t& address, const size_t& arg=0);
       std::string resolvedParameter( const IExpression* param ) const; 
+      
       void clear();
+
+      std::map<const IExpression*, std::string> parameters() const { return m_resolvedParameters; }
     private: 
       std::map<const IExpression*, std::string>             m_resolvedParameters;          /// Map of parameters that have been resolved
       std::map<std::string, std::shared_ptr<CacheTransfer>> m_cacheFunctions;              /// Container of functions for calculating function cache
       std::map<std::string, unsigned>                       m_evtMap;                      /// Event specification 
       std::map<std::string, std::string>                    m_parameterMapping;            /// Mapping of parameters to compile parameters
       const MinuitParameterSet*                             m_mps;                         /// Set of MinuitParameters 
-      std::map<const SubTree*, uint64_t>                    m_tempTrees;                   /// temporary store of sub-trees for performing cse reduction 
+      std::map<const IExpression*, const SubTree*>          m_tempTrees;                   /// temporary store of sub-trees for performing cse reduction 
       unsigned int                                          m_nParameters;                 /// Number of parameters
-      bool                                                  m_enable_cuda;                 /// flag to generate CUDA code <<experimental>>
-      bool                                                  m_enable_compileTimeConstants; /// flag to enable compile time constants <<experimental>> 
+      bool                                                  m_enable_cuda                 {false}; /// flag to generate CUDA code <<experimental>>
+      bool                                                  m_enable_compileTimeConstants {false}; /// flag to enable compile time constants <<experimental>> 
+      bool                                                  m_enable_avx                  {false}; /// flag to generate code using AVX instructions <<experimental>>
+      bool                                                  m_check_hashes                {false}; /// flag to check that hashes are unique 
   };
   
   template <> void ASTResolver::resolve<Parameter>( const Parameter& obj );
   template <> void ASTResolver::resolve<SubTree>  ( const SubTree  & obj );
   template <> void ASTResolver::resolve<Spline>   ( const Spline   & obj );
   template <> void ASTResolver::resolve<MinuitParameterLink>( const MinuitParameterLink& obj );  
+  template <> void ASTResolver::resolve<LambdaExpression>( const LambdaExpression& obj);
 }

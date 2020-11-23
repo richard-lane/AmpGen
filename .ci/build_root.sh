@@ -1,17 +1,19 @@
+pushd $DEPS_DIR 
 set -evx
 
-pushd "${DEPS_DIR}"
-
-# root_v6.12.06.Linux-ubuntu16-x86_64-gcc5.4.tar.gz
-ROOT_URL="https://root.cern.ch/download/root_v6.12.06.Linux-ubuntu16-x86_64-gcc5.4.tar.gz"
-
-if [[ ! -f "${DEPS_DIR}/root/bin/root-config" ]] ; then
-  echo "Downloading Root"
-  mkdir -p root
-  travis_retry wget --no-check-certificate --quiet -O - "${ROOT_URL}" | tar --strip-components=1 -xz -C root
+os=$1
+if [[ $os == "osx" ]] ; then 
+  wget -nv http://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O miniconda_${os}.sh
+elif [[ $os == "linux" ]] ; then 
+  wget -nv http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda_${os}.sh
 fi
 
-source "${DEPS_DIR}/root/bin/thisroot.sh"
-popd
+bash miniconda_${os}.sh -b -p $DEPS_DIR/miniconda
+export PATH="$DEPS_DIR/miniconda/bin:$PATH"
+hash -r
+conda config --add channels conda-forge
 
-set +evx
+conda create --yes -n env_${os} root doxygen -c conda-forge
+
+set +evx 
+popd

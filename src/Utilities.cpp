@@ -17,13 +17,7 @@
 std::vector<std::string> AmpGen::vectorFromFile( const std::string& filename, const char ignoreLinesThatBeginWith )
 {
   std::vector<std::string> output;
-  std::string tmp;
-  std::ifstream inFile( filename.c_str() );
-  while ( inFile.good() ) {
-    std::getline( inFile, tmp );
-    if ( tmp.size() == 0 || tmp[0] == ignoreLinesThatBeginWith ) continue;
-    output.push_back( tmp );
-  }
+  processFile( filename, [&output](const std::string& line) mutable -> void {output.push_back(line);} ); 
   return output;
 }
 
@@ -105,6 +99,13 @@ std::string AmpGen::replaceAll( const std::string& input, const std::string& toR
       start_pos = pos + toReplace.length();
     }
   } while ( pos != std::string::npos );
+  return output;
+}
+
+std::string AmpGen::replaceAll( const std::string& input, const std::vector<std::pair<std::string,std::string>>& rules )
+{
+  std::string output = input; 
+  for( auto& rule : rules ) output = replaceAll(output, rule.first, rule.second);
   return output;
 }
 
@@ -202,20 +203,16 @@ bool AmpGen::stringMatchesWildcard( const std::string& input, const std::string&
 {
   auto pos = wildcard_string.find( wildcard_character ); /// TEST_foobar -> *_foobar
   if ( wildcard_string.size() == 1 && wildcard_string[0] == wildcard_character ) {
-    DEBUG( "Returning true" );
     return true;
   }
   if ( pos == std::string::npos ) {
-    DEBUG( "Returning " << input << " = " << wildcard_string << " ?" );
     return input == wildcard_string;
   }
   if ( pos == wildcard_string.size() - 1 ) {
-    DEBUG( "Returning " << input << " contains " << wildcard_string );
     return input.find( wildcard_string.substr( 0, wildcard_string.size() - 1 ) ) == 0;
   } else {
     const std::string pattern1 = wildcard_string.substr( 0, pos + 1 );
     const std::string pattern2 = wildcard_string.substr( pos + 1 );
-    DEBUG( "Matching " << pattern1 << " to " << input );
     bool match1 = stringMatchesWildcard( input, pattern1, wildcard_character );
     if ( !match1 ) return false;
     auto pos2             = pattern2.find( wildcard_character );
@@ -284,10 +281,18 @@ void AmpGen::printSplash()
   #elif defined(__GNUC__) || defined(__GNUG__)
     std::cout << "gcc " << __GNUC__ << "." << __GNUC_MINOR__ << "." << __GNUC_PATCHLEVEL__;
   #endif
+  #if ENABLE_AVX2d
+    std::cout << " (avx2; double)";
+  #elif ENABLE_AVX2f
+    std::cout << " (avx2; single)";
+  #elif ENABLE_AVX512
+    std::cout << " (avx512; double)";
+  #endif
+    
   std::cout << "  " << __DATE__ << " " << __TIME__ << bold_off << "\n\n";
-
-  char* AmpGenRoot = getenv("AMPGENROOT");
-  if( AmpGenRoot != nullptr ) printReleaseNotes( std::string(AmpGenRoot) + "/doc/release.notes"); 
+  #ifdef AMPGENROOT_CMAKE
+    printReleaseNotes( std::string(AMPGENROOT_CMAKE) + "/release.notes"); 
+  #endif
 }
 
 bool AmpGen::fileExists( const std::string& name )
@@ -326,16 +331,20 @@ std::string AmpGen::expandGlobals( std::string path )
     } else {
       end_pos       = find_next_of( path, {".", "/"}, pos );
       variable_name = path.substr( pos + 1, end_pos - pos - 1 );
+      end_pos--;
     }
     const char* global_var = getenv( variable_name.c_str() );
-    if ( global_var == nullptr ) {
+    if ( variable_name == "AMPGENROOT" && global_var == nullptr )
+    {
+      global_var = AMPGENROOT; 
+    }
+    else if ( global_var == nullptr ) {
       ERROR( "variable " << variable_name << " not found" );
       break;
     }
     std::string old_path = path;
     size_t len           = end_pos == std::string::npos ? path.length() - pos + 1 : end_pos - pos + 1;
     path                 = path.replace( pos, len, global_var );
-    DEBUG( old_path << " -> " << path );
   } while ( pos != std::string::npos );
 
   return path;

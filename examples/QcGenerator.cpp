@@ -7,7 +7,7 @@
 #include "AmpGen/ProfileClock.h"
 #include "AmpGen/ParticlePropertiesList.h"
 #include "AmpGen/MinuitParameterSet.h"
-
+#include "AmpGen/AddCPConjugate.h"
 #include <TFile.h>
 #include <TRandom3.h>
 #include <TRandom.h>
@@ -50,7 +50,7 @@ struct DTEvent
   AmpGen::Event signal;
   AmpGen::Event    tag;
   double prob;
-  DTEvent() : signal(0,0,0), tag(0,0,0) {};
+  DTEvent() : signal(0,0), tag(0,0) {};
   DTEvent( const AmpGen::Event& signal, const AmpGen::Event& tag ) : signal(signal), tag(tag) {};
   void set( const AmpGen::Event& s1, const AmpGen::Event& s2 ) { signal.set(s1); tag.set(s2); };
   void invertParity(){
@@ -85,8 +85,6 @@ class DTYieldCalculator {
     std::map<std::string, double> efficiencies    = {getKeyed("Efficiencies")};
 };
 
-void add_CP_conjugate( MinuitParameterSet& mps );
-
 template <class PDF> struct normalised_pdf {
   PDF       pdf; 
   complex_t norm;
@@ -104,7 +102,7 @@ template <class PDF> struct normalised_pdf {
     norm = sqrt(yc.bf(type)/n);
     if( it != nullptr ) norm *= exp( 1i * it->mean() * M_PI/180. );
     pc.stop();
-    INFO(type << " Time to construct: " << pc << "[ms], norm = " << norm  << " " << typeof<PDF>() );
+    INFO(type << " Time to construct: " << pc << "[ms], norm = " << norm  << " " << type_string<PDF>() );
   }
   complex_t operator()(const Event& event){ return norm * pdf.getValNoCache(event); }
 };
@@ -145,7 +143,7 @@ template <class T1, class T2> class Psi3770 {
       {
         double n1(0), n2(0), zR(0), zI(0);
         auto normEvents = Generator<PhaseSpace>(type).generate(m_blockSize);
-#pragma omp parallel for reduction(+:zR,zI,n1,n2)
+        #pragma omp parallel for reduction(+:zR,zI,n1,n2)
         for(size_t i = 0; i < m_blockSize; ++i){
           auto p1 = t1(normEvents[i]);
           auto p2 = t2(normEvents[i]);
@@ -186,7 +184,7 @@ template <class T1, class T2> class Psi3770 {
     DTEventList generate( const size_t& N )
     {
       DTEventList output( m_signalType, m_tagType );
-      ProgressBar pb(60, trimmedString(__PRETTY_FUNCTION__));
+      ProgressBar pb(60, detail::trimmedString(__PRETTY_FUNCTION__));
       auto tStartTotal = std::chrono::high_resolution_clock::now();
       int currentSize  = 0;
       double norm      = -1;
@@ -266,7 +264,7 @@ int main( int argc, char** argv )
 #endif
   MinuitParameterSet MPS; 
   MPS.loadFromStream();
-  add_CP_conjugate( MPS );
+  AddCPConjugate(MPS);
   EventType signalType( pNames );
   TFile* f = TFile::Open( output.c_str() ,"RECREATE");
   auto yc = DTYieldCalculator(crossSection);
@@ -326,7 +324,7 @@ void add_CP_conjugate( MinuitParameterSet& mps )
       std::string pname   = tokens[0];
       if ( reOrIm == "Re" || reOrIm == "Im" ){
         auto p = Particle( pname ).conj();
-        sgn = reOrIm == "Re" ? p.quasiCP() : 1; 
+        sgn = reOrIm == "Re" ? p.CP() : 1; 
         new_name = p.uniqueString() +"_"+reOrIm;
       }
       else if( tokens.size() == 2 ) {
@@ -429,8 +427,9 @@ TTree* DTEventList::tree(const std::string& name)
     outputTree->Branch(("Tag_"+particleName(m_tagType, i)+"_ID").c_str(), &id_tag[i]);
     ids_tag[i] = ParticlePropertiesList::get( m_tagType[i] )->pdgID();
   }
+  bool sym = NamedParameter<bool>("symmetrise",true);
   for( auto& evt: *this ){
-    bool swap = gRandom->Uniform() > 0.5;
+    bool swap = sym && ( gRandom->Uniform() > 0.5 );
     tmp.set(evt.signal, evt.tag);
     if( swap ) tmp.invertParity();
     for(size_t i=0; i != m_sigType.size(); ++i)
@@ -439,6 +438,7 @@ TTree* DTEventList::tree(const std::string& name)
       id_tag[i] = swap ? -ids_tag[i] : ids_tag[i];
     outputTree->Fill();
   }
+
   return outputTree;
 }    
 

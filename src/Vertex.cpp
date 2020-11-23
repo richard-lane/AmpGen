@@ -13,14 +13,14 @@
 
 using namespace AmpGen;
 
-const Tensor::Index mu    = Tensor::Index();
-const Tensor::Index nu    = Tensor::Index();
-const Tensor::Index alpha = Tensor::Index();
-const Tensor::Index beta  = Tensor::Index();
-const Tensor::Index a     = Tensor::Index();
-const Tensor::Index b     = Tensor::Index(); 
-const Tensor::Index c     = Tensor::Index(); 
-const Tensor::Index d     = Tensor::Index(); 
+static const Tensor::Index mu    = Tensor::Index();
+static const Tensor::Index nu    = Tensor::Index();
+static const Tensor::Index alpha = Tensor::Index();
+static const Tensor::Index beta  = Tensor::Index();
+static const Tensor::Index a     = Tensor::Index();
+static const Tensor::Index b     = Tensor::Index(); 
+static const Tensor::Index c     = Tensor::Index(); 
+static const Tensor::Index d     = Tensor::Index(); 
 
 template <> Factory<AmpGen::Vertex::Base>* Factory<AmpGen::Vertex::Base>::gImpl = nullptr;
 
@@ -169,7 +169,7 @@ DEFINE_VERTEX( V_VS_P )
 }
 
 
-DEFINE_VERTEX( V_VS_S ){ return Spin1Projector(P)(mu,nu) * V1(-nu) * V2[0]; }
+DEFINE_VERTEX( V_VS_S ){ auto S = Spin1Projector(P)(mu,nu) * V1(-nu) * V2[0]; ADD_DEBUG_TENSOR(S,db); return S; }
 
 DEFINE_VERTEX( V_VS_D )
 {
@@ -177,6 +177,40 @@ DEFINE_VERTEX( V_VS_D )
   Tensor Sv     = Spin1Projector( P );
   return ( Sv( mu, nu ) * L_2_V0( -nu, -alpha ) * V1( alpha ) ) * V2[0];
 }
+
+DEFINE_VERTEX( V_VV_P )
+{
+  Tensor L = Orbital_PWave( P, Q )/GeV;
+  return L(mu) * dot(V1,V2);
+}
+
+DEFINE_VERTEX( V_VV_P1 )
+{
+   Tensor L = Orbital_PWave( P, Q )/GeV;
+   Tensor Sv  = Spin1Projector( P );
+   Tensor term = LeviCivita()( -mu, -nu, -alpha, -beta ) * P( nu )/GeV * V1( alpha ) * V2( beta );
+   Tensor phi_1 = term(-mu) * Sv(mu,nu);
+      
+   return LeviCivita()( -mu, -nu, -alpha, -beta ) * P( mu )/GeV * L(nu) * phi_1(alpha);
+}
+
+DEFINE_VERTEX( V_VV_P2 )
+{
+    Tensor L = Orbital_PWave( P, Q )/GeV;
+    Tensor Sv  = Spin2Projector( P );
+    Tensor phi_2 = Sv(-mu,-nu,alpha,beta) * V1(mu) * V2(nu);
+        
+    return L(-mu) * phi_2(mu,nu);
+}
+
+DEFINE_VERTEX( V_VV_S )
+{
+    Tensor Sv  = Spin1Projector( P );
+    Tensor term = LeviCivita()( -mu, -nu, -alpha, -beta ) * P( nu )/GeV * V1( alpha ) * V2( beta );
+        
+    return term( -mu ) * Sv(mu, nu);
+}
+
 
 DEFINE_VERTEX( T_VS_D )
 {
@@ -293,6 +327,30 @@ DEFINE_VERTEX( f_Vf_S1 )
   return proj( a, b ) * vSlash(b,c) * V2(c);
 }
 
+DEFINE_VERTEX( f_Vf_SL )
+{ 
+  Tensor proj = Spin1hProjector(P);
+  return proj(a, b) * Gamma4Vec()(mu,b,c) * ( Identity(4) - Gamma[4] )(c,d)* V2(d) * V1(-mu);
+}
+
+DEFINE_VERTEX( f_Vf_SR )
+{ 
+  Tensor proj = Spin1hProjector(P);
+  return proj(a, b) * Gamma4Vec()(mu,b,c) * ( Identity(4) + Gamma[4] )(c,d)* V2(d) * V1(-mu);
+}
+
+DEFINE_VERTEX( f_fS_SL )
+{ 
+  Tensor proj = Spin1hProjector(P);
+  return proj(a, b) * ( Identity(4) - Gamma[4] )(b,c)* V2(c);
+}
+
+
+DEFINE_VERTEX( f_fS_SR )
+{ 
+  Tensor proj = Spin1hProjector(P);
+  return proj(a, b) * ( Identity(4) + Gamma[4] )(b,c)* V2(c);
+}
 
 DEFINE_VERTEX( f_fS_S1 ){ return Spin1hProjector(P)(a,b) * Gamma[4](b,c) * V1(c) * V2[0];}
 
@@ -398,3 +456,19 @@ DEFINE_VERTEX( S_ff_S1 ){ return Bar(V2)(a) * Gamma[4](a,b) * V1(b); }
 DEFINE_VERTEX( V_ff_S ) { return Bar(V2)(a) * Gamma4Vec()(mu,a,b) * V1(b); }
 
 DEFINE_VERTEX( V_ff_S1 ){ return Bar(V2)(a) * Gamma[4](a,b) * Gamma4Vec()(mu,b,c) * V1(c); }
+
+DEFINE_VERTEX( V_ff_PL )
+{ 
+  Tensor proj = Spin1Projector(P);
+  auto pl = 0.5 * ( Identity(4) - Gamma[4] ); 
+  ADD_DEBUG_TENSOR( pl, db);
+  ADD_DEBUG_TENSOR( pl(b,c)* V2(c), db );
+  return proj(mu, nu) * Bar(V1)(a) * Gamma4Vec()(-nu,a,b) * ( Identity(4) - Gamma[4] )(b,c)* V2(c); 
+}
+
+DEFINE_VERTEX( V_ff_PR )
+{ 
+  Tensor proj = Spin1Projector(P);
+  ADD_DEBUG_TENSOR( (Identity(4) + Gamma[4] )(b,c)* V2(c), db );
+  return proj(mu, nu) * Bar(V1)(a) * Gamma4Vec()(-nu,a,b) * ( Identity(4) + Gamma[4] )(b,c)* V2(c); 
+}

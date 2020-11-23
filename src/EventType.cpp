@@ -20,18 +20,22 @@
 #include "AmpGen/Utilities.h"
 #include "AmpGen/Units.h"
 #include "AmpGen/Event.h"
+#include "AmpGen/OptionsParser.h"
 
 using namespace AmpGen;
 std::string convertTeXtoROOT(std::string input);
 
 EventType::EventType( const std::vector<std::string>& particleNames, const bool& isTD ) : m_timeDependent( isTD )
 {
+  if ( OptionsParser::printHelp() ) return; 
+
   if ( particleNames.size() < 3 ) { // Mother plus two daughters minimum required
     ERROR( "Not enough particles in event type: " << particleNames[0] << " size =  " << particleNames.size() );
     throw std::runtime_error( "Not enough particles listed in particle names! Was it defined?" );
   }
   m_mother           = particleNames.at(0);
-  for ( unsigned int i  = 1; i < particleNames.size(); ++i ) m_particleNames.push_back( particleNames[i] );
+  m_alt_part_names = NamedParameter<bool>("EventType::AlternativeParticleNames", false );
+  
   auto motherProperties = ParticlePropertiesList::get( m_mother );
   if ( motherProperties != nullptr )
     m_motherMass = motherProperties->mass();
@@ -39,19 +43,27 @@ EventType::EventType( const std::vector<std::string>& particleNames, const bool&
     ERROR( "Particle not found: " << m_mother );
     return;
   }
-  m_alt_part_names = NamedParameter<bool>("EventType::AlternativeParicleNames", false );
-  for ( auto& particle : m_particleNames ) {
-    auto prop = ParticlePropertiesList::get( particle );
+  
+  m_ignore.resize(particleNames.size()-1,false);
+  for ( auto it = particleNames.begin()+1; it != particleNames.end(); ++it )
+  { 
+    if( *it->begin() == '{' && *it->rbegin() == '}' )
+    {
+      m_particleNames.push_back( it->substr(1, it->size() -2 ) );
+    }
+    else m_particleNames.push_back( *it );
+
+    auto prop = ParticlePropertiesList::get( *m_particleNames.rbegin() );
     if ( prop != nullptr )
       m_particleMasses.push_back( prop->mass() );
     else {
-      ERROR( "Particle not found: " << particle );
+      FATAL( "Particle not found: " << *m_particleNames.rbegin() );
       return;
     }
     if(m_alt_part_names)
-      m_particleNamesPickled.push_back( replaceAll( replaceAll( particle, "+", "p" ), "-", "m" ) );
+      m_particleNamesPickled.push_back( replaceAll( *m_particleNames.rbegin(), {{"+","p"},{"-","m"},{"(",""},{")",""}}));
     else
-      m_particleNamesPickled.push_back( replaceAll( replaceAll( particle, "+", "~" ), "-", "#" ) );
+      m_particleNamesPickled.push_back( replaceAll( *m_particleNames.rbegin(), {{"+","~"},{"-","#"},{"(",""},{")",""}}));
   }
   DEBUG( m_mother << " = " << m_motherMass << " -> " );
   for ( unsigned int i = 0; i < m_particleNames.size(); ++i ) {
@@ -96,7 +108,7 @@ void EventType::extendEventType( const std::string& branch )
 {
   m_eventTypeExtensions.push_back(branch);
 }
-std::pair<double, double> EventType::minmax( const std::vector<unsigned>& indices, bool isGeV ) const
+std::pair<double, double> EventType::minmax( const std::vector<unsigned>& indices) const
 {
   std::vector<unsigned> ivec( size() );
   std::iota( ivec.begin(), ivec.end(), 0 );
@@ -105,7 +117,7 @@ std::pair<double, double> EventType::minmax( const std::vector<unsigned>& indice
   double max = motherMass();
   for ( auto& x : ivec )
     if ( std::find( indices.begin(), indices.end(), x ) == indices.end() ) max -= mass( x );
-  return std::pair<double, double>(min*min, max*max);
+  return std::pair<double, double>(min, max);
 }
 std::pair<unsigned, unsigned> EventType::count(const unsigned& index) const
 {
@@ -171,19 +183,19 @@ std::vector<Projection> EventType::defaultProjections(const unsigned& nBins) con
 Projection EventType::projection(const unsigned& nBins, const std::vector<unsigned>& indices, const std::string& observable) const
 {
   bool useRootLabelling = NamedParameter<bool>("EventType::UseRootTEX", false );
-  auto mm               = minmax(indices, true);
+  auto mm               = minmax(indices);
   std::string gevcccc   = useRootLabelling ? "GeV^{2}/c^{4}" : "\\mathrm{GeV}^{2}/c^{4}";
   std::string gevcc     = useRootLabelling ? "GeV/c^{2}"     : "\\mathrm{GeV}/c^{2}";
   if( observable == "mass2" )
     return Projection( [indices]( const Event& evt ) { return evt.s( indices ); },
         "s" + vectorToString( indices ),
         "s_{" + label( indices ) + "}", nBins,
-        ( mm.first - 0.05 ) ,  ( mm.second + 0.05 ) , gevcccc );
+        ( mm.first * mm.first - 0.05 ) ,  ( mm.second * mm.second + 0.05 ) , gevcccc );
   else if( observable == "mass" ){
     return Projection( [indices]( const Event& evt ) { return sqrt( evt.s( indices ) ); },
         "m" + vectorToString( indices ),
         "m_{" + label( indices ) + "}", nBins,
-        mm.first > 0.05 ? sqrt(mm.first - 0.05) :0 ,  sqrt( mm.second + 0.05 ) , gevcc );
+        mm.first > 0.05 ? mm.first - 0.05 :0 ,  mm.second + 0.05, gevcc );
   }
   return Projection();
 }
@@ -221,7 +233,7 @@ std::function<void( Event& )> EventType::symmetriser() const
     for ( auto& s : shuffle ) shuffle_string += std::to_string( s ) + " ";
     DEBUG( "Shuffle = " << shuffle_string );
   }
-  auto fcn = [shuffles, rng]( auto& event ) mutable -> void {
+  return [shuffles, rng]( auto& event ) mutable -> void {
     for ( auto shuffled : shuffles ) {
       for ( unsigned int index = 0; index < shuffled.size(); ++index ) {
         unsigned int j = std::uniform_int_distribution<int>( 0, index )( rng );
@@ -231,8 +243,46 @@ std::function<void( Event& )> EventType::symmetriser() const
       }
     }
   };
-  return fcn;
 }
+
+std::function<bool(Event&, const std::vector<int>&)> EventType::automaticOrdering() const 
+{
+  std::vector<int> ids;
+  for( unsigned i = 0 ; i != m_particleNames.size(); ++i ) ids.push_back( ParticleProperties::get(m_particleNames[i])->pdgID() );
+  auto matches = [](const auto& c1, const auto& c2 , unsigned sgn = +1)
+  {
+    std::vector<bool> used( c1.size(), false );
+    for(unsigned i = 0; i != c1.size(); ++i )
+    {
+      for( unsigned j = 0; j != c2.size(); ++j )
+      {
+        if( c1[i] == sgn * c2[j] && ! used[j] ) used[j] = true;
+      }
+    }
+    return std::all_of( std::begin(used), std::end(used), [](auto b) { return b; }  ) ;
+  };
+
+  return [ids, matches](auto& event, const auto& actual_ids) -> bool {
+    std::vector<unsigned> new_addresses( ids.size(), 999 ); 
+    int sgn = +1; 
+    if( matches(ids, actual_ids ) ) sgn = +1;
+    else if( matches(ids, actual_ids, -1 ) ) sgn = -1;
+    else { ERROR("Ids: " << vectorToString(actual_ids, " ") << " do not match either particle or antiparticle ["<< vectorToString(ids, " ") << "]" );
+      return false; 
+    }
+    
+    for( unsigned i = 0 ; i != ids.size(); ++i )
+    {
+      for( unsigned j = 0 ; j != actual_ids.size(); ++j )
+      {
+        if( actual_ids[j] ==  sgn * ids[i] && new_addresses[j]==999 ){ new_addresses[j] = i; break ; }
+      }
+    }
+    event.reorder( new_addresses );
+    return true; 
+  };
+}
+
 
 bool EventType::has( const std::string& name ) const
 {

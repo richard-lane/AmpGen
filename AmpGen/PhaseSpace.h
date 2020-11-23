@@ -22,16 +22,17 @@ namespace AmpGen
   class PhaseSpace
   {
     public:
-      PhaseSpace()  = default;                                    ///< Empty constructor 
-      PhaseSpace(const EventType& type, TRandom* rand = gRandom); ///< Construct a phase space generator from an EventType 
-      PhaseSpace(const Particle&  type, TRandom* rand = gRandom); ///< Construct a phase space generator from a Particle 
+      PhaseSpace() = default;                                              ///< Empty constructor 
+      explicit PhaseSpace(const EventType& type, TRandom* rand = gRandom); ///< Construct a phase space generator from an EventType 
+      explicit PhaseSpace(const Particle&  type, TRandom* rand = gRandom); ///< Construct a phase space generator from a Particle 
       
       bool setDecay( const double& m0, const std::vector<double>& mass ); ///< Set the parameters of this phase space generator
       void setRandom( TRandom* rand ) { m_rand = rand; } ///< Set the random number used by this phase space generator 
       size_t size() const { return m_nt; }               ///< Return the number of decay products
-      Event makeEvent( const size_t& cacheSize = 0 );    ///< Make an event in this phase space. 
+      Event makeEvent();                                 ///< Make an event in this phase space. 
       EventType eventType() const;                       ///< Returns the EventType that this phase space is generating
 
+      void provideEfficiencyReport(const std::vector<bool>& report){}
     private:
       size_t       m_nt        = {0};                    ///< Number of particles in the final state
       double       m_mass[18]  = {0};                    ///< Masses of particles in the final state

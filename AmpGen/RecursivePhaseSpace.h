@@ -47,10 +47,11 @@ namespace AmpGen
 
       void print( const size_t& offset = 0 ) const;
       void setRandom( TRandom* rand );
-      Event makeEvent( const size_t& cacheSize = 0 );
+      Event makeEvent();
       size_t size() const;
       EventType eventType() const ;
 
+      void provideEfficiencyReport(const std::vector<bool>& report){}
     private:
       PhaseSpace   m_phsp;
       unsigned     m_totalSize = {0};

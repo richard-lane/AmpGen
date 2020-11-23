@@ -26,19 +26,6 @@ MinuitParameterSet::MinuitParameterSet(const std::vector<MinuitParameter*>& para
   for( auto& param : params ) add(param); 
 }
 
-MinuitParameterSet::MinuitParameterSet( const MinuitParameterSet& other )
-  : m_parameters( other.m_parameters ), m_keyAccess( other.m_keyAccess ){}
-
-MinuitParameterSet MinuitParameterSet::getFloating()
-{
-  MinuitParameterSet floating;
-  for ( auto& param : *this ) {
-    if ( param->isFree() && dynamic_cast<MinuitExpression*>(param) != nullptr ) 
-      floating.add(param);
-  }
-  return floating;
-}
-
 bool MinuitParameterSet::addToEnd( MinuitParameter* parPtr )
 {
   bool success = true;
@@ -135,6 +122,7 @@ void MinuitParameterSet::tryParameter( const std::vector<std::string>& line )
     double max  = hasLimits ? lexical_cast<double>( line[5], status ) : 0;
     if( !status ) return; 
     auto   flag = parse<Flag>( line[1] );
+    if( flag == Flag::Invalid ) return; 
     if ( OptionsParser::printHelp() )
       INFO( "MINUIT: Registered " << line[0] << " ( " << to_string<Flag>(flag) << ") = " << mean << ", step=" << step << " ("<< min << "," << max << ")" );
     add( new MinuitParameter( line[0], flag, mean, step, min, max ) ); 
@@ -153,6 +141,7 @@ void MinuitParameterSet::tryParameter( const std::vector<std::string>& line )
     if ( !status ) return;
     auto flag_re = parse<Flag>(line[1]);
     auto flag_im = parse<Flag>(line[4 + 2*hasLimits]);
+    if( flag_re == Flag::Invalid || flag_im == Flag::Invalid ) return; 
     if ( OptionsParser::printHelp() ) {
       INFO( "MINUIT: Complex " << line[0] << "_Re ( " << to_string<Flag>(flag_re) << ") = " << mean_re << ", step=" << step_re << " (" << min_re << "," << max_re << ")" );
       INFO( "MINUIT: Complex " << line[0] << "_Im ( " << to_string<Flag>(flag_im) << ") = " << mean_im << ", step=" << step_im << " (" << min_im << "," << max_im << ")" );
@@ -202,21 +191,23 @@ void MinuitParameterSet::resetToInit()
   for ( auto& param : *this ) param->resetToInit();
 }
 
-void MinuitParameterSet::rename(const std::string& name, const std::string& new_name)
+
+bool MinuitParameterSet::rename(const std::string& name, const std::string& new_name)
 {
   auto it = find(name);
   if( it == nullptr ){
-    ERROR("Parameter: " << name << " not found");
-    return;
+    DEBUG("Parameter: " << name << " not found");
+    return false;
   }
-  if( name == new_name ) return;
+  if( name == new_name ) return false;
   if( find(new_name) != nullptr ){
-    // ERROR("New key for " << name << " =  " << new_name << " already exists");
-    return;
+    DEBUG("New key for " << name << " =  " << new_name << " already exists");
+    return false;
   } 
   it->setName(new_name);
   m_keyAccess.erase(name);
   m_keyAccess.emplace(new_name, it);
+  return true; 
 }
 
 MinuitParameter* MinuitParameterSet::addOrGet( const std::string& name, const Flag& flag, const double& mean,
@@ -225,6 +216,7 @@ MinuitParameter* MinuitParameterSet::addOrGet( const std::string& name, const Fl
   if ( m_keyAccess.count( name ) != 0 ) return m_keyAccess[name];
   return add( name, flag, mean, sigma, min, max );
 }
+
 MinuitParameterSet::const_iterator  MinuitParameterSet::cbegin() const { return m_parameters.cbegin(); }
 MinuitParameterSet::const_iterator  MinuitParameterSet::cend()   const { return m_parameters.cend(); }
 MinuitParameterSet::iterator        MinuitParameterSet::begin()        { return m_parameters.begin(); }
@@ -244,4 +236,9 @@ double MinuitParameterSet::operator()( const std::string& name )
     ERROR( "Cannot find parameter " << name );
   }
   return m_keyAccess[name]->mean();
+}
+
+MinuitParameterSet::~MinuitParameterSet()
+{
+  for( auto& param : m_parameters ) if( param != nullptr ) delete param; 
 }

@@ -18,12 +18,6 @@
 using namespace AmpGen;
 using namespace std::complex_literals; 
 
-namespace AmpGen 
-{
-  make_enum(coordinateType, cartesian, polar)
-  make_enum(angType, deg, rad)
-}
-
 Coupling::Coupling(MinuitParameter* re, MinuitParameter* im) :
   m_re(re),
   m_im(im)
@@ -40,14 +34,17 @@ Coupling::Coupling(MinuitParameter* re, MinuitParameter* im) :
   }
   m_particle = Particle(m_name);
   coordinateType coord = NamedParameter<coordinateType>("CouplingConstant::Coordinates", coordinateType::cartesian);
-  angType degOrRad     = NamedParameter<angType>("CouplingConstant::AngularUnits", angType::rad);
+  angType degOrRad     = NamedParameter<angType>("CouplingConstant::AngularUnits"      , angType::rad);
   m_isCartesian = true; 
+  
   if( coord == coordinateType::polar ) m_isCartesian = false; 
-  else if ( coord != coordinateType::cartesian){
+  
+  if ( coord == coordinateType::Invalid){
     FATAL("Coordinates for coupling constants must be either cartesian or polar");
   } 
   if ( degOrRad == angType::deg) m_sf = M_PI / 180; 
-  else if ( degOrRad != angType::rad){
+  
+  if ( degOrRad == angType::Invalid ){
     FATAL("TotalCoupling::AngularUnits must be either rad or deg");
   } 
 }
@@ -73,7 +70,7 @@ AmplitudeRules::AmplitudeRules( const MinuitParameterSet& mps )
       bool isCoupling = Particle::isValidDecayDescriptor( it_re->name() );
       if( isCoupling ){
         MinuitExpression* expression = dynamic_cast<MinuitExpression*>( it_re );
-        INFO("Constructing: " << expression << " " << it_re->name() );
+        DEBUG("Constructing: " << expression << " " << it_re->name() );
         if( expression != nullptr ){
           Coupling p(expression);
           m_rules[p.head()].emplace_back(p);
@@ -100,11 +97,11 @@ std::vector<Coupling> AmplitudeRules::rulesForDecay(const std::string& head, con
   if(!hasDecay(head)) return std::vector<Coupling>();
   if( prefix == "" )return m_rules[head];
   std::vector<Coupling> rt = m_rules[head];
-  rt.erase( std::remove_if( std::begin(rt), std::end(rt), [&prefix](auto& p){ return p.prefix() != prefix; } ) );
+  rt.erase( std::remove_if( std::begin(rt), std::end(rt), [&prefix](auto& p){ return p.prefix() != prefix; } ), rt.end() );
   return rt;
 }
 
-std::map<std::string, std::vector<Coupling>> AmplitudeRules::rules() 
+const std::map<std::string, std::vector<Coupling>>& AmplitudeRules::rules() const
 { 
   return m_rules;
 }
@@ -131,7 +128,7 @@ std::complex<double> Coupling::operator()() const
 
 Expression Coupling::to_expression() const 
 {
-  return m_expr != nullptr ? m_expr->expression() : ( m_isCartesian ? Parameter(m_re->name()) + 1i * Parameter(m_im->name()) : Parameter( m_re->name() ) * fcn::exp( 1i * m_sf * Parameter(m_im->name()) ) );
+  return m_expr != nullptr ? m_expr->expression() : ( m_isCartesian ? ComplexParameter(Parameter(m_re->name()), Parameter(m_im->name())) : Parameter( m_re->name() ) * fcn::exp( 1i * m_sf * Parameter(m_im->name()) ) );
 }
 
 std::complex<double> TotalCoupling::operator()() const
@@ -201,6 +198,6 @@ bool TotalCoupling::isFixed() const
 
 bool TotalCoupling::contains( const std::string& label ) const 
 {
-  return std::any_of(begin(), end(), [&label](auto& c){ return c.x()->name().find(label) != std::string::npos ; } );
+  return std::any_of(begin(), end(), [&label](auto& c){ return c.name().find(label) != std::string::npos ; } );
 }
 

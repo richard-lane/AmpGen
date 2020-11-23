@@ -9,12 +9,20 @@
 #include "AmpGen/Utilities.h"
 #include "AmpGen/MinuitParameter.h"
 #include "AmpGen/ASTResolver.h"
+#include "AmpGen/enum.h"
+#include "AmpGen/NamedParameter.h"
 
 using namespace AmpGen;
 using namespace std::complex_literals; 
 
 DEFINE_CAST( MinuitParameterLink )
 DEFINE_CAST( ExpressionPack )
+
+namespace AmpGen 
+{
+  complete_enum(coordinateType, cartesian, polar)
+  complete_enum(angType, deg, rad)
+}
 
 void ExpressionParser::processBinaryOperators( std::vector<std::string>& opCodes, std::vector<Expression>& expressions )
 {
@@ -109,8 +117,21 @@ ExpressionParser::ExpressionParser()
   add_binary( "+" , [](auto& A, auto& B ) { return A + B; } );
   add_binary( ">" , [](auto& A, auto& B ) { return A > B; } );
   add_binary( "<" , [](auto& A, auto& B ) { return A < B; } );
-  add_binary( "&&", []( auto& A, auto& B ) { return A && B; } );
-  add_binary( "," , []( auto& A, auto& B ) { return ExpressionPack( A, B ); } );
+  add_binary( "&&", [](auto& A, auto& B ) { return A && B; } );
+  add_binary( "," , [](auto& A, auto& B ) { return ExpressionPack( A, B ); } );
+ 
+  coordinateType coord = NamedParameter<coordinateType>("CouplingConstant::Coordinates", coordinateType::cartesian);
+  angType degOrRad     = NamedParameter<angType>("CouplingConstant::AngularUnits", angType::rad);
+  m_isCartesian = true; 
+  if( coord == coordinateType::polar ) m_isCartesian = false; 
+  else if ( coord != coordinateType::cartesian){
+    FATAL("Coordinates for coupling constants must be either cartesian or polar");
+  } 
+  if ( degOrRad == angType::deg) m_sf = M_PI / 180; 
+  else if ( degOrRad != angType::rad){
+    FATAL("CouplingConstant::AngularUnits must be either rad or deg");
+  } 
+
 }
 
 Expression ExpressionParser::parse( 
@@ -133,16 +154,15 @@ Expression ExpressionParser::processEndPoint( const std::string& name, const Min
   bool status  = true;
   double value = lexical_cast<double>( name, status );
   if ( status == true ) return value;
-  if ( name == "PI" ) return M_PI;
-  if ( name == "pi" ) return M_PI;
+  if ( name == "PI" || name == "pi" || name == "M_PI" ) return M_PI;
   if ( name == "e" ) return std::exp(1);
-  if ( name == "I" ) return complex_t( 0, 1 );
-  if ( name == "i" ) return complex_t( 0, 1 );
+  if ( name == "I" || name == "i" ) return complex_t( 0, 1 );
   if ( mps != nullptr ) {
     auto it = mps->find(name);
     if ( it != nullptr ) return MinuitParameterLink( it );
     else if ( mps->find(name+"_Re") != nullptr && mps->find(name+"_Im") != nullptr ) {
-      return MinuitParameterLink( mps->find(name+"_Re") ) + 1i * MinuitParameterLink( mps->find(name+"_Im") );
+      if( m_isCartesian ) return MinuitParameterLink( mps->find(name+"_Re") ) + 1i * MinuitParameterLink( mps->find(name+"_Im") );
+      else return MinuitParameterLink( mps->find(name+"_Re") ) * fcn::exp( m_sf * 1i *MinuitParameterLink( mps->find(name+"_Im") ) ); 
     }
     else { 
       WARNING( "Token not understood: " << name << " [map size = " << mps->size() << "]" );
@@ -152,9 +172,13 @@ Expression ExpressionParser::processEndPoint( const std::string& name, const Min
 }
 
 MinuitParameterLink::MinuitParameterLink( MinuitParameter* param ) : m_parameter( param ) {}
+
 std::string MinuitParameterLink::to_string(const ASTResolver* resolver) const
 {
-  return resolver == nullptr ? m_parameter->name() : resolver->resolvedParameter(this);
+  if( resolver == nullptr ) return m_parameter->name();
+  if( resolver->enableCompileConstants() && m_parameter != nullptr && m_parameter->flag () == Flag::CompileTimeConstant )
+   return std::to_string( m_parameter->mean() ); 
+  return resolver->resolvedParameter(this);
 }
 
 std::string MinuitParameterLink::name() const {
@@ -163,7 +187,7 @@ std::string MinuitParameterLink::name() const {
 
 void MinuitParameterLink::resolve( ASTResolver& resolver ) const
 {
-  resolver.resolve(*this);
+  if( m_parameter->flag() != Flag::CompileTimeConstant ) resolver.resolve(*this);
 }
 
 complex_t MinuitParameterLink::operator()() const 

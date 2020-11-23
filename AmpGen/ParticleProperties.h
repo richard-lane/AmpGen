@@ -44,8 +44,8 @@ namespace AmpGen
       int twoSpin()      const { return m_twoSpin; }         ///< Returns twice the spin of the particle 
       int charge()       const { return m_charge; }          ///< Returns the (electrical) charge of the particle
       char S()           const { return m_status; }          ///< Returns the existence status of the particle, i.e. whether it is confirmed by multiple experiments
-      std::string I()        const { return m_isospin; }     ///< Returns the isospin of the particle as a string.
-      std::string J()        const { return m_JtotalSpin; }  ///< Returns the total angular momentum of the particle
+      std::string I()    const { return m_isospin; }     ///< Returns the isospin of the particle as a string.
+      std::string J()    const;     
       std::string label()    const { return m_texName; }     ///< Returns the LaTeX formatted label for the particle
       std::string name()     const;                          ///< Returns the particle name
       std::string spinName() const;                          ///< Returns the name of the particles spin. 
@@ -54,10 +54,16 @@ namespace AmpGen
       bool isNonResonant()   const;                          ///< Check is this is a nonresonant `quasi-particle'
       bool isFermion()       const;                          ///< Check if the particle is a fermion, i.e. if the spin 1/2, 3/2, ...
       bool isBoson()         const;                          ///< Check if the particle is a boson, i.e. if the spin 0, 1, 2...
-      const QuarkContent& netQuarkContent() const { return m_netQuarkContent; } ///< Returns the particle's quark content
+      bool isNeutrino()      const;                          ///< Check if the particle is a neutrino
+
+      bool isPhoton()        const;                          ///< Check if the particle is a photon 
+      void setProperty(const std::string& key, const std::string& value); ///< set a propery of a particle by key 
+      const QuarkContent& quarkContent() const { return m_quarkContent; } ///< Returns the particle's quark content
 
       void setLabel( const std::string& label ) { m_texName = label; }          ///< Set the LaTeX label of the particle
-      void setName( const std::string& name ) { m_name = name; }                ///< Set the name of the particle
+      void setName( const std::string& name ) { 
+        m_customName = true; 
+        m_name = name; }                ///< Set the name of the particle
 
       void print( std::ostream& out = std::cout ) const;
 
@@ -73,31 +79,29 @@ namespace AmpGen
       static const ParticleProperties* get( const std::string& name, const bool& quiet=false ); 
 
     private:
-      double m_mass;                     ///< mass [GeV]
-      double m_mErrPlus;                 ///< +ve mass error [GeV]
-      double m_mErrMinus;                ///< -ve mass error [GeV]
-      double m_width;                    ///< width [GeV]
-      double m_wErrPlus;                 ///< +ve width error [GeV]
-      double m_wErrMinus;                ///< -ve width error [GeV]
-      double m_radius;                   ///< hadronic radius
-      int m_Gparity;                     ///< G-parity
-      int m_parity;                      ///< Parity
-      int m_Cparity;                     ///< Charge 'parity'
-      int m_pdgID;                       ///< PDG id
-      int m_Rexist;                      ///< likelihood of existence, baryons only
-      int m_charge;                      ///< electrical charge
-      int m_twoSpin;                     ///< twice the spin 
-      std::string m_isospin;             ///< isospin
-      std::string m_JtotalSpin;          ///< total spin
-      std::string m_name;                ///< particle name
-      std::string m_quarks;              ///< quark string
-      std::string m_texName;             ///< latex label of particle
-      std::string m_chargeString;        ///< string for particle charge
+      double m_mass{0};                  ///< mass [GeV]
+      double m_mErrPlus{0};              ///< +ve mass error [GeV]
+      double m_mErrMinus{0};             ///< -ve mass error [GeV]
+      double m_width{0};                 ///< width [GeV]
+      double m_wErrPlus{0};              ///< +ve width error [GeV]
+      double m_wErrMinus{0};             ///< -ve width error [GeV]
+      double m_radius{0};                ///< hadronic radius
+      int m_Gparity{0};                  ///< G-parity
+      int m_parity{0};                   ///< Parity
+      int m_Cparity{0};                  ///< Charge 'parity'
+      int m_pdgID{0};                    ///< PDG id
+      int m_Rexist{0};                   ///< likelihood of existence, baryons only
+      int m_charge{0};                   ///< electrical charge
+      int m_twoSpin{0};                  ///< twice the spin 
+      std::string m_isospin{""};         ///< isospin
+      std::string m_name{""};            ///< particle name
+      std::string m_texName{""};         ///< latex label of particle
+      std::string m_chargeString{""};    ///< string for particle charge
       char m_Aformat;                    ///< anti-particle format character
       char m_status;                     ///< status (estalished or not etc)
-      QuarkContent m_netQuarkContent;    ///< The quark content of the state (uD, uud etc.)
+      QuarkContent m_quarkContent;       ///< The quark content of the state (uD, uud etc.)
       bool m_isValid;                    ///< Flag to check whether the ParticleProperties have configured correctly 
-
+      bool m_customName = {false};       ///< Flag to make custom name 
       void antiQuarks();
       void antiCharge();
       int chargeFromString( const std::string& ch, bool& status ) const;

@@ -1,4 +1,5 @@
 #ifndef AMPGEN_EXPRESSIONPARSER_H
+#define AMPGEN_EXPRESSIONPARSER_H 1 
 
 #include <complex>
 #include <functional>
@@ -9,13 +10,17 @@
 
 #include "AmpGen/Expression.h"
 #include "AmpGen/Types.h"
+#include "AmpGen/enum.h"
 
 namespace AmpGen
 {
   class ASTResolver;
   class MinuitParameter;
   class MinuitParameterSet;
-
+  
+  declare_enum(coordinateType, cartesian, polar)
+  declare_enum(angType, deg, rad)
+  
   class MinuitParameterLink : public IExpression {
     public:
       explicit MinuitParameterLink( MinuitParameter* param ) ;
@@ -82,6 +87,9 @@ namespace AmpGen
 
       std::map<std::string, unaryFCN>                m_unaryFunctions;
       std::vector<std::pair<std::string, binaryFCN>> m_binaryFunctions;
+      bool                                           m_isCartesian = {true};
+      double                                         m_sf          = {1};
+    
   };
 } // namespace AmpGen
 
